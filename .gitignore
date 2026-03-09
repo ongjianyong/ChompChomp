@@ -1,0 +1,23 @@
+# Credentials
+.env
+docker-compose.yml
+
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+.venv/
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Build outputs
+dist/
+build/
+*.log
