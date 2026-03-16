@@ -50,14 +50,6 @@ services:
           - /api/v1/alert
         strip_path: false
 
-  - name: logistics-service
-    url: http://logistics-ms:5005
-    routes:
-      - name: logistics-route
-        paths:
-          - /api/v1/logistics
-        strip_path: false
-
   - name: user-service
     url: http://user-ms:5006
     routes:

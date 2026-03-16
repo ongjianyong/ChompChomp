@@ -120,10 +120,12 @@ services:
     depends_on:
       - inventory-ms
       - payment-ms
+      - order-ms
       - rabbitmq
     environment:
       - INVENTORY_SERVICE_URL=http://inventory-ms:5001/api/v1/inventory
       - PAYMENT_SERVICE_URL=http://payment-ms:5003/api/v1/payments/charge
+      - ORDER_SERVICE_URL=http://order-ms:5002/api/v1/orders
       - RABBITMQ_HOST=rabbitmq
     volumes:
       - ./backend/checkout_orchestrator:/app
@@ -153,25 +155,6 @@ services:
     networks:
       - chomp-network
 
-  logistics-ms:
-    build: ./backend/logistics_ms
-    container_name: chomp-logistics-ms
-    ports:
-      - "5005:5005"
-    depends_on:
-      postgres:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    environment:
-      - DATABASE_URL=postgresql://logistics_user:logistics_pass@postgres:5432/logistics_db
-      - RABBITMQ_HOST=rabbitmq
-      - COURIER_TIMEOUT_SECONDS=30
-      - COURIER_SUCCESS_RATE=1.0 # Set to 0.0 to test "No Courier Found" scenario
-    volumes:
-      - ./backend/logistics_ms:/app
-    networks:
-      - chomp-network
 
   payment-ms:
     build: ./backend/payment_ms

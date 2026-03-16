@@ -13,6 +13,7 @@ CORS(app)
 # Configuration
 INVENTORY_SERVICE_URL = os.environ.get("INVENTORY_SERVICE_URL", "http://inventory-ms:5001/api/v1/inventory")
 PAYMENT_SERVICE_URL = os.environ.get("PAYMENT_SERVICE_URL", "http://payment-ms:5003/api/v1/payments/charge")
+ORDER_SERVICE_URL = os.environ.get("ORDER_SERVICE_URL", "http://order-ms:5002/api/v1/orders")
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 
 # In-memory tracking for demo (Redis would be better for production)
@@ -116,7 +117,23 @@ def process_payment():
             # 2. Finalize Session
             active_sessions[session_id]['status'] = 'paid'
             
-            # 3. Notify User via Alert MS
+            # 3. Persist Order History (Atomic Persistence)
+            try:
+                order_payload = {
+                    "customerID": session['userID'],
+                    "merchantID": data.get('merchantID') or "MOCK_MERCHANT", # In real app we'd get this from session
+                    "itemID": session['itemID'],
+                    "quantity": session['quantity'],
+                    "price": session.get('price', data.get('amount')), # Fallback to amount
+                    "total_paid": data.get('amount'),
+                    "paymentID": pay_resp.json().get('paymentID'),
+                    "status": "paid"
+                }
+                requests.post(ORDER_SERVICE_URL, json=order_payload, timeout=5)
+            except Exception as e:
+                print(f"FAILED TO PERSIST ORDER HISTORY: {e}")
+
+            # 4. Notify User via Alert MS
             publish_event('alert.send', {
                 "phone": "+6598261606",
                 "message": f"ChompChomp: Payment successful for {session['itemName']}! Thank you for rescuing food."
