@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
+    const [postalCode, setPostalCode] = useState(user?.postal_code || '');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
 
@@ -18,7 +19,7 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ name, phone })
+                body: JSON.stringify({ name, phone, postal_code: postalCode })
             });
 
             if (response.ok) {
@@ -92,6 +93,20 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                             className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors"
                         />
                         <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +65). Required for SMS alerts.</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 uppercase tracking-widest mb-2">
+                            Postal Code
+                        </label>
+                        <input
+                            type="text"
+                            value={postalCode}
+                            onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            required
+                            placeholder="123456"
+                            className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-colors"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Singapore 6-digit postal code. Used for calculating distance to shops.</p>
                     </div>
 
                     {user.role !== 'merchant' && (

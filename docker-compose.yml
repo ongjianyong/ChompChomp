@@ -1,0 +1,176 @@
+services:
+  kong:
+    image: kong:latest
+    container_name: kong-gateway
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "8001:8001"
+      - "8444:8444"
+    volumes:
+      - ./api-gateway/kong.yml:/kong/declarative/kong.yml
+    networks:
+      - chomp-network
+
+  postgres:
+    image: postgres:15
+    container_name: chomp-postgres
+    environment:
+      - POSTGRES_USER=chomp_admin
+      - POSTGRES_PASSWORD=chomp_password
+      - POSTGRES_DB=chomp_db
+    ports:
+      - "5434:5432" # Changed host port to 5434 to avoid conflicts with local Postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chomp_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chomp-network
+
+  redis:
+    image: redis:6-alpine
+    container_name: chomp-redis
+    ports:
+      - "6381:6379" # Changed host port to 6381 to avoid conflicts with local Redis
+    networks:
+      - chomp-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: chomp-rabbitmq
+    ports:
+      - "5674:5672"   # Changed host port to 5674 to avoid conflicts with local RabbitMQ
+      - "15674:15672" # Changed host port to 15674 for Management UI
+    networks:
+      - chomp-network
+
+  user-ms:
+    build: ./backend/user_ms
+    container_name: chomp-user-ms
+    ports:
+      - "5006:5006"
+    environment:
+      - DATABASE_URL=postgresql://user_user:user_pass@postgres:5432/user_db
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      postgres:
+        condition: service_started
+    volumes:
+      - ./backend/user_ms:/app
+    command: gunicorn --bind 0.0.0.0:5006 --reload app:app
+    networks:
+      - chomp-network
+
+  inventory-ms:
+    build: ./backend/inventory_ms
+    container_name: chomp-inventory-ms
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://inventory_user:inventory_pass@postgres:5432/inventory_db
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./backend/inventory_ms:/app
+    command: gunicorn --bind 0.0.0.0:5001 --reload app:app
+    networks:
+      - chomp-network
+
+  order-ms:
+    build: ./backend/order_ms
+    container_name: chomp-order-ms
+    ports:
+      - "5002:5002"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://order_user:order_pass@postgres:5432/order_db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+      - INVENTORY_URL=http://inventory-ms:5001
+      - PAYMENT_URL=http://payment-ms:5003
+    volumes:
+      - ./backend/order_ms:/app
+    command: gunicorn --bind 0.0.0.0:5002 --reload app:app
+    networks:
+      - chomp-network
+
+  logistics-ms:
+    build: ./backend/logistics_ms
+    container_name: chomp-logistics-ms
+    ports:
+      - "5005:5005"
+    depends_on:
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://logistics_user:logistics_pass@postgres:5432/logistics_db
+      - RABBITMQ_HOST=rabbitmq
+      - COURIER_TIMEOUT_SECONDS=30
+      - COURIER_SUCCESS_RATE=1.0 # Set to 0.0 to test "No Courier Found" scenario
+    volumes:
+      - ./backend/logistics_ms:/app
+    networks:
+      - chomp-network
+
+  payment-ms:
+    build: ./backend/payment_ms
+    container_name: chomp-payment-ms
+    ports:
+      - "5003:5003"
+    environment:
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    volumes:
+      - ./backend/payment_ms:/app
+    command: gunicorn --bind 0.0.0.0:5003 --reload app:app
+    networks:
+      - chomp-network
+
+  notification-ms:
+    build: ./backend/notification_ms
+    container_name: chomp-notification-ms
+    ports:
+      - "5004:5004"
+    depends_on:
+      - rabbitmq
+      - user-ms
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - USER_SERVICE_URL=http://user-ms:5006/api/v1/users
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
+      - TWILIO_TRIAL_DESTINATION_NUMBER=${TWILIO_TRIAL_DESTINATION_NUMBER}
+    volumes:
+      - ./backend/notification_ms:/app
+    networks:
+      - chomp-network
+
+networks:
+  chomp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

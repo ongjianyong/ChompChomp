@@ -1,6 +1,6 @@
 # Credentials
 .env
-docker-compose.yml
+
 
 # Dependencies
 node_modules/

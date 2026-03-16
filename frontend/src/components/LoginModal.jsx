@@ -7,6 +7,7 @@ const LoginModal = ({ onLogin, onRegister, onClose }) => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [role, setRole] = useState('user');
+    const [postalCode, setPostalCode] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -17,6 +18,7 @@ const LoginModal = ({ onLogin, onRegister, onClose }) => {
         setPassword('');
         setName('');
         setPhone('');
+        setPostalCode('');
         setRole('user');
     };
 
@@ -28,7 +30,7 @@ const LoginModal = ({ onLogin, onRegister, onClose }) => {
         if (mode === 'login') {
             result = await onLogin(email, password);
         } else {
-            result = await onRegister(name, email, password, phone, role);
+            result = await onRegister(name, email, password, phone, role, postalCode);
         }
         setLoading(false);
         if (result) setError(result);
@@ -83,6 +85,17 @@ const LoginModal = ({ onLogin, onRegister, onClose }) => {
                                     required
                                     className="w-full border border-gray-300 focus:border-black outline-none px-4 py-3 text-sm transition-colors"
                                     placeholder="+65 9123 4567"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Singapore Postal Code</label>
+                                <input
+                                    type="text"
+                                    value={postalCode}
+                                    onChange={e => setPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    required
+                                    className="w-full border border-gray-300 focus:border-black outline-none px-4 py-3 text-sm transition-colors"
+                                    placeholder="123456"
                                 />
                             </div>
                         </>

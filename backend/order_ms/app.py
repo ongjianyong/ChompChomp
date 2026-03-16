@@ -186,7 +186,27 @@ def confirm_payment(order_id):
             print(f"DIAGNOSTIC: Reservation for order {order_id} has expired")
             # Auto-release stock if expired
             INVENTORY_URL = os.environ.get("INVENTORY_URL", "http://inventory-ms:5001")
-            requests.post(f"{INVENTORY_URL}/api/v1/inventory/{order.itemID}/release", json={"quantity": order.quantity})
+            try:
+                # Fetch item details first to get the name
+                item_resp = requests.get(f"{INVENTORY_URL}/api/v1/inventory", timeout=5)
+                item_name = "An item"
+                if item_resp.ok:
+                    items_list = item_resp.json()
+                    item_data = next((i for i in items_list if i['itemID'] == order.itemID), None)
+                    if item_data:
+                        item_name = item_data['name']
+
+                requests.post(f"{INVENTORY_URL}/api/v1/inventory/{order.itemID}/release", json={"quantity": order.quantity})
+                
+                # Broadcast re-availability
+                publish_event('box.available_again', {
+                    "itemID": order.itemID,
+                    "name": item_name,
+                    "merchantID": order.merchantID
+                })
+            except Exception as ex:
+                print(f"DIAGNOSTIC: Error releasing stock/notifying: {ex}")
+
             order.status = 'cancelled'
             db.commit()
             return jsonify({"error": "Reservation expired. Stock has been released."}), 410
@@ -439,9 +459,28 @@ def cleanup_expired_reservations():
                         print(f"CLEANUP [DEBUG]: Inventory response: {resp.status_code} {resp.text}")
                         
                         if resp.status_code in [200, 201]:
+                            # Fetch item name for notification
+                            item_name = "An item"
+                            try:
+                                item_resp = requests.get(f"{INVENTORY_URL}/api/v1/inventory", timeout=5)
+                                if item_resp.ok:
+                                    items_list = item_resp.json()
+                                    item_data = next((i for i in items_list if i['itemID'] == order.itemID), None)
+                                    if item_data:
+                                        item_name = item_data['name']
+                            except: pass
+
                             order.status = 'cancelled'
                             redis_client.delete(f"lock:item:{order.itemID}")
-                            print(f"CLEANUP [SUCCESS]: Order {order.orderID} reaped.")
+                            
+                            # Broadcast re-availability
+                            publish_event('box.available_again', {
+                                "itemID": order.itemID,
+                                "name": item_name,
+                                "merchantID": order.merchantID
+                            })
+                            
+                            print(f"CLEANUP [SUCCESS]: Order {order.orderID} reaped and notification sent.")
                         else:
                             print(f"CLEANUP [FAILURE]: Inventory service rejected release for {order.orderID}: {resp.text}")
                     except Exception as re:

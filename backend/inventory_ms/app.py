@@ -3,7 +3,12 @@ from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base, sessionmaker
 import pika
 import os
+import sys
 import json
+import math
+import requests
+import threading
+import time
 
 app = Flask(__name__)
 
@@ -15,6 +20,7 @@ Base = declarative_base()
 
 # RabbitMQ Configuration
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
+USER_SERVICE_URL = os.environ.get("USER_SERVICE_URL", "http://user-ms:5006/api/v1/users")
 
 class Item(Base):
     __tablename__ = "items"
@@ -26,6 +32,8 @@ class Item(Base):
     original_price = Column(Float)
     quantity = Column(Integer)
     status = Column(String, default="available")
+    lat = Column(Float, nullable=True)
+    long = Column(Float, nullable=True)
 
 Base.metadata.create_all(bind=engine)
 
@@ -42,6 +50,32 @@ def publish_event(event_type, payload):
         connection.close()
     except Exception as e:
         print(f"Failed to publish event: {e}")
+
+def get_merchant_location(merchant_id):
+    """Helper to fetch merchant location from user_ms."""
+    try:
+        resp = requests.get(f"{USER_SERVICE_URL}/{merchant_id}", timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get('lat'), data.get('long')
+    except Exception as e:
+        print(f"Error fetching merchant location: {e}")
+    return None, None
+
+def haversine(lat1, lon1, lat2, lon2):
+    """Calculate the great circle distance between two points on the earth."""
+    # Radius of earth in kilometers
+    R = 6371.0
+    
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(dphi / 2)**2 + \
+        math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2)**2
+    
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
 
 @app.route('/api/v1/inventory', methods=['POST'])
 def create_item():
@@ -60,6 +94,12 @@ def create_item():
         db.add(new_item)
         db.commit()
         db.refresh(new_item)
+
+        # Get merchant location for initial storage
+        lat, long = get_merchant_location(new_item.merchantID)
+        new_item.lat = lat
+        new_item.long = long
+        db.commit()
 
         # Broadcast the event for Notifications MS
         publish_event('box.listed', {
@@ -80,9 +120,23 @@ def create_item():
 def get_items():
     db = SessionLocal()
     try:
+        user_lat = request.args.get('lat', type=float)
+        user_long = request.args.get('long', type=float)
+        max_dist = request.args.get('max_dist', type=float)
+        
         items = db.query(Item).filter(Item.status == 'available').all()
-        result = [
-            {
+        result = []
+        for item in items:
+            dist = None
+            if user_lat is not None and user_long is not None and item.lat is not None and item.long is not None:
+                dist = haversine(user_lat, user_long, item.lat, item.long)
+            
+            # Filter by distance if max_dist is provided
+            if max_dist is not None:
+                if dist is None or dist > max_dist:
+                    continue
+
+            result.append({
                 "itemID": item.itemID,
                 "merchantID": item.merchantID,
                 "merchant_name": item.merchant_name or f"Merchant #{item.merchantID}",
@@ -90,9 +144,14 @@ def get_items():
                 "price": item.price,
                 "original_price": item.original_price,
                 "quantity": item.quantity,
-                "status": item.status
-            } for item in items
-        ]
+                "status": item.status,
+                "distance": round(dist, 2) if dist is not None else None
+            })
+        
+        # Sort by distance if calculated
+        if user_lat is not None and user_long is not None:
+            result.sort(key=lambda x: (x['distance'] is None, x['distance']))
+            
         return jsonify(result), 200
     finally:
         db.close()
@@ -233,6 +292,50 @@ def delete_item(item_id):
         return jsonify({"error": str(e)}), 500
     finally:
         db.close()
+
+def consume_user_events():
+    """Background consumer to update merchant locations when they change."""
+    while True:
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+            channel = connection.channel()
+            channel.exchange_declare(exchange='chomp_events', exchange_type='topic')
+            
+            result = channel.queue_declare(queue='', exclusive=True)
+            queue_name = result.method.queue
+            channel.queue_bind(exchange='chomp_events', queue=queue_name, routing_key='user.location_updated')
+            
+            def callback(ch, method, properties, body):
+                data = json.loads(body)
+                if data.get('role') == 'merchant':
+                    merchant_id = data.get('userID')
+                    new_lat = data.get('lat')
+                    new_long = data.get('long')
+                    
+                    db = SessionLocal()
+                    try:
+                        # Update all items belonging to this merchant
+                        items = db.query(Item).filter(Item.merchantID == merchant_id).all()
+                        for item in items:
+                            item.lat = new_lat
+                            item.long = new_long
+                        db.commit()
+                        print(f"[INVENTORY MS] Updated location for merchant {merchant_id}")
+                    except Exception as e:
+                        print(f"Error updating merchant location: {e}", file=sys.stderr)
+                    finally:
+                        db.close()
+                ch.basic_ack(delivery_tag=method.delivery_tag)
+
+            channel.basic_consume(queue=queue_name, on_message_callback=callback)
+            print("Inventory MS consumer waiting for user location events...", file=sys.stderr)
+            channel.start_consuming()
+        except Exception as e:
+            print(f"Inventory consumer failed: {e}. Retrying in 5s...", file=sys.stderr)
+            time.sleep(5)
+
+# Start background thread
+threading.Thread(target=consume_user_events, daemon=True).start()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))

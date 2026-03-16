@@ -16,13 +16,27 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
     const [checkoutTotal, setCheckoutTotal] = useState(0);
     const [checkoutQuantity, setCheckoutQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('browse'); // 'browse' or 'orders'
+    const [maxDist, setMaxDist] = useState(null); // null, 5, 10
 
     useEffect(() => {
         if (activeTab === 'browse') {
             const fetchItems = async () => {
                 setLoading(true);
                 try {
-                    const response = await fetch('http://localhost:8000/api/v1/inventory');
+                    let url = 'http://localhost:8000/api/v1/inventory';
+                    const params = new URLSearchParams();
+                    if (user?.lat && user?.long) {
+                        params.append('lat', user.lat);
+                        params.append('long', user.long);
+                    }
+                    if (maxDist) {
+                        params.append('max_dist', maxDist);
+                    }
+                    
+                    const queryString = params.toString();
+                    if (queryString) url += `?${queryString}`;
+
+                    const response = await fetch(url);
                     if (response.ok) {
                         const data = await response.json();
                         setItems(data);
@@ -35,7 +49,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
             };
             fetchItems();
         }
-    }, [activeTab]);
+    }, [activeTab, user?.lat, user?.long, maxDist]);
 
     // If user is logged in, we don't show the massive hero as per request
     const isGuest = !user;
@@ -95,6 +109,22 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 </h2>
                             </div>
 
+                            {/* Distance Filter */}
+                            {!isGuest && user?.lat && (
+                                <div className="flex-grow flex justify-end items-center space-x-3">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Within</span>
+                                    <select 
+                                        value={maxDist || ''} 
+                                        onChange={(e) => setMaxDist(e.target.value ? Number(e.target.value) : null)}
+                                        className="bg-transparent border-b border-black text-xs font-bold uppercase tracking-widest py-1 outline-none"
+                                    >
+                                        <option value="">Any Distance</option>
+                                        <option value="2">&lt; 2km</option>
+                                        <option value="5">&lt; 5km</option>
+                                        <option value="10">&lt; 10km</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
                         {loading ? (
@@ -129,6 +159,11 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                                 <div className="flex flex-col">
                                                     <span className="text-gray-400 line-through text-xs">${product.original_price?.toFixed(2)}</span>
                                                     <span className="text-black font-bold text-lg">${product.price?.toFixed(2)}</span>
+                                                    {product.distance !== undefined && product.distance !== null && (
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                                            📍 {product.distance}km away
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <Button
                                                     variant="primary"

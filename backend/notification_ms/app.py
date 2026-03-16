@@ -113,6 +113,34 @@ def process_event(ch, method, properties, body):
         if regular_users:
             threading.Thread(target=delayed_sms_worker, args=(regular_users, msg), daemon=True).start()
 
+    elif routing_key == 'box.available_again':
+        item_name = data.get('name', 'An item')
+        merchant_id = data.get('merchantID')
+        
+        merchant_user = get_user_info(merchant_id) if merchant_id else None
+        merchant_name = merchant_user.get('name') if merchant_user else 'A restaurant'
+        
+        msg = f"Good news! {item_name} from {merchant_name} is available again on ChompChomp! Grab it now!"
+
+        all_users = get_all_users()
+        customers = [u for u in all_users if u.get('role') == 'user' and u.get('phone') == '+6598261606']
+        
+        premium_users = [u for u in customers if u.get('tier') == 'premium']
+        regular_users = [u for u in customers if u.get('tier') != 'premium']
+
+        # Prevent demo spam
+        premium_users = premium_users[:1]
+        regular_users = regular_users[:1]
+        
+        print(f"[NOTIFICATION] 🔄 Item available again: {item_name}")
+        
+        for pu in premium_users:
+            send_real_sms(pu['phone'], msg)
+                
+        import threading
+        if regular_users:
+            threading.Thread(target=delayed_sms_worker, args=(regular_users, msg), daemon=True).start()
+
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 def consume():
@@ -129,6 +157,7 @@ def consume():
             # Bind to relevant events
             channel.queue_bind(exchange='chomp_events', queue=queue_name, routing_key='courier.not_found')
             channel.queue_bind(exchange='chomp_events', queue=queue_name, routing_key='box.listed')
+            channel.queue_bind(exchange='chomp_events', queue=queue_name, routing_key='box.available_again')
             
             channel.basic_consume(queue=queue_name, on_message_callback=process_event)
             

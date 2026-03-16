@@ -45,12 +45,12 @@ function App() {
     }
   };
 
-  const handleRegister = async (name, email, password, phone, role) => {
+  const handleRegister = async (name, email, password, phone, role, postal_code) => {
     try {
       const response = await fetch('http://localhost:8000/api/v1/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, phone, role })
+        body: JSON.stringify({ name, email, password, phone, role, postal_code })
       });
 
       const data = await response.json();
