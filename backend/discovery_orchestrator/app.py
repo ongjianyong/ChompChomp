@@ -55,6 +55,7 @@ def publish_event(event_type, payload):
         print(f"Failed to publish event: {e}")
 
 @app.route('/api/v1/discovery/listings', methods=['GET'])
+@app.route('/api/v1/inventory', methods=['GET']) # Redirect support
 def get_listings():
     """Composite endpoint to fetch listings with distance info."""
     user_lat = request.args.get('lat', type=float)
@@ -73,12 +74,13 @@ def get_listings():
         users = users_resp.json()
         
         # Create a map of merchant coordinates
-        merchant_coords = {u['id']: (u.get('lat'), u.get('long')) for u in users if u.get('role') == 'merchant'}
+        # FIX: Ensure keys are strings to match item['merchantID']
+        merchant_coords = {str(u['id']): (u.get('lat'), u.get('long')) for u in users if u.get('role') == 'merchant'}
         
         # 2. Composition & Logic
         result = []
         for item in items:
-            m_id = item.get('merchantID')
+            m_id = str(item.get('merchantID')) # Ensure string
             m_lat, m_long = merchant_coords.get(m_id, (None, None))
             
             dist = None
@@ -95,6 +97,7 @@ def get_listings():
             
         # Sorting
         if user_lat is not None and user_long is not None:
+            # Put those with distance first
             result.sort(key=lambda x: (x['distance'] is None, x['distance']))
             
         return jsonify(result), 200
@@ -102,7 +105,31 @@ def get_listings():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/v1/inventory/merchant/<string:merchant_id>', methods=['GET'])
+def get_merchant_items(merchant_id):
+    """Proxy to Catalog MS for merchant-specific listings."""
+    try:
+        url = f"{INVENTORY_SERVICE_URL}/merchant/{merchant_id}"
+        resp = requests.get(url, timeout=5)
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/v1/inventory/<int:item_id>', methods=['PUT', 'DELETE'])
+def proxy_inventory_management(item_id):
+    """Proxy PUT/DELETE to Catalog MS for merchant dashboard functionality."""
+    try:
+        url = f"{INVENTORY_SERVICE_URL}/{item_id}"
+        if request.method == 'PUT':
+            resp = requests.put(url, json=request.json, timeout=5)
+        else: # DELETE
+            resp = requests.delete(url, timeout=5)
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/v1/discovery/listings', methods=['POST'])
+@app.route('/api/v1/inventory', methods=['POST'])
 def create_listing():
     """Composite endpoint to create a listing and handle geocoding."""
     data = request.json
@@ -156,7 +183,7 @@ def create_listing():
                     time.sleep(30) # 30s delay for demo
                     for u in regular:
                         if u.get('phone'):
-                            publish_event('alert.send', {"phone": u['phone'], "message": f"[DELAYED] {msg}"})
+                            publish_event('alert.send', {"phone": u['phone'], "message": msg})
                 
                 threading.Thread(target=delayed_alert, daemon=True).start()
 

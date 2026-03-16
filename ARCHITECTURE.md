@@ -42,7 +42,7 @@ Docker is used to package each microservice and infrastructure component into it
 
 ### 4. RabbitMQ (Message Broker)
 - **Role:** Handles asynchronous, background communication between microservices using events.
-- **How it works:** Instead of making microservices wait for each other, they "publish" events to RabbitMQ. For example, when an order is paid, `payment_ms` publishes an `order.paid` event. RabbitMQ holds this message and routes it to any service that cares (like `logistics_ms` to find a driver, and `notification_ms` to send an SMS).
+- **How it works:** Instead of making microservices wait for each other, they "publish" events to RabbitMQ. For example, when a listing is created, the orchestrator publishes an `alert.send` event. RabbitMQ holds this message and routes it to the `alert-ms` to send an SMS.
 
 ## Service-Oriented Architecture (SOA)
 ChompChomp follows SOA principles by distinguishing between **Atomic Services** (which manage core entity data) and **Composite (Orchestrator) Services** (which manage business workflows).
@@ -50,23 +50,23 @@ ChompChomp follows SOA principles by distinguishing between **Atomic Services** 
 ### 1. Atomic Services ("The Nouns")
 These services are highly specialized, decoupled, and do not call other local services directly. They provide the fundamental building blocks of the system.
 
-- **Account MS (`user_ms`)**: Pure CRUD for user and merchant profiles.
-- **Catalog MS (`inventory_ms`)**: Pure CRUD for food box listings and stock management.
-- **Transaction MS (`payment_ms`)**: Interface for Stripe payment processing.
-- **Alert MS (`alert_ms`)**: A generic SMS gateway (Twilio).
-- **Order MS (`order_ms`)**: Manages the persistence of order history.
+- **`user-ms`**: Pure CRUD for all user accounts, including both **Customers** and **Merchants**.
+- **`inventory-ms`**: Pure CRUD for food box listings and stock management.
+- **`payment-ms`**: Interface for Stripe payment processing.
+- **`alert-ms`**: A generic SMS gateway (Twilio/Mock).
+- **`order-ms`**: Manages the persistence of order history.
 
 ### 2. Composite Orchestrators ("The Verbs")
 These services manage complex business processes by coordinating multiple atomic services. The frontend communicates primarily with these orchestrators.
 
 - **Discovery Orchestrator**: 
-  - Composes `Account` and `Catalog` data.
+  - Composes `user-ms` and `inventory-ms` data.
   - Handles external geocoding (OneMap SG).
   - Calculates distances and handles triggered notifications for new listings.
 - **Checkout Orchestrator**:
   - Manages the end-to-end reservation and payment lifecycle.
   - Handles the 1-minute stock reservation timeout logic.
-  - Coordinates `Catalog`, `Order`, and `Payment` services.
+  - Coordinates `inventory-ms`, `order-ms`, and `payment-ms`.
 
 ## Core Infrastructure Components
 
@@ -81,12 +81,12 @@ These services manage complex business processes by coordinating multiple atomic
 Each atomic service has its own independent database schema, ensuring data isolation.
 
 ### 3. RabbitMQ (Message Broker)
-Used for asynchronous cross-service communication (e.g., broadcasting `alert.send` events that the `Alert MS` consumes to send SMS).
+Used for asynchronous cross-service communication (e.g., broadcasting `alert.send` events that the `alert-ms` consumes to send SMS).
 
 ## Interaction Models
 
 ### Orchestration (Synchronous Workflow)
-Used when a business process requires immediate coordination. The **Checkout Orchestrator** calls the **Inventory MS** to reserve stock and the **Payment MS** to charge the user in a single cohesive flow.
+Used when a business process requires immediate coordination. The **Checkout Orchestrator** calls the **inventory-ms** to reserve stock and the **payment-ms** to charge the user in a single cohesive flow.
 
 ### Event-Driven (Asynchronous Workflow)
 Used for decoupled side-effects. When the **Discovery Orchestrator** creates a listing, it publishes an event. The **Alert MS** listens for these events to send SMS notifications without blocking the listing creation process.

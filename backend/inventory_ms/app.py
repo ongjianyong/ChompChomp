@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base, sessionmaker
-import pika
 import os
 import sys
 import json
@@ -15,8 +14,6 @@ engine = create_engine(DB_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# RabbitMQ Configuration
-RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 
 class Item(Base):
     __tablename__ = "items"
@@ -31,19 +28,7 @@ class Item(Base):
 
 Base.metadata.create_all(bind=engine)
 
-def publish_event(event_type, payload):
-    try:
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-        channel = connection.channel()
-        channel.exchange_declare(exchange='chomp_events', exchange_type='topic')
-        channel.basic_publish(
-            exchange='chomp_events',
-            routing_key=event_type,
-            body=json.dumps(payload)
-        )
-        connection.close()
-    except Exception as e:
-        print(f"Failed to publish event: {e}")
+
 
 
 @app.route('/api/v1/inventory', methods=['POST'])
@@ -64,13 +49,7 @@ def create_item():
         db.commit()
         db.refresh(new_item)
 
-        # Broadcast the event for Notifications MS
-        publish_event('box.listed', {
-            "itemID": new_item.itemID,
-            "merchantID": new_item.merchantID,
-            "name": new_item.name,
-            "price": new_item.price
-        })
+
 
         return jsonify({"message": "Item created successfully", "itemID": new_item.itemID}), 201
     except Exception as e:
