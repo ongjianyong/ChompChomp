@@ -93,6 +93,44 @@ services:
     networks:
       - chomp-network
 
+  discovery-orchestrator:
+    build: ./backend/discovery_orchestrator
+    container_name: chomp-discovery-orchestrator
+    ports:
+      - "5010:5010"
+    depends_on:
+      - inventory-ms
+      - user-ms
+      - rabbitmq
+    environment:
+      - INVENTORY_SERVICE_URL=http://inventory-ms:5001/api/v1/inventory
+      - USER_SERVICE_URL=http://user-ms:5006/api/v1/users
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./backend/discovery_orchestrator:/app
+    command: gunicorn --bind 0.0.0.0:5010 --reload app:app
+    networks:
+      - chomp-network
+
+  checkout-orchestrator:
+    build: ./backend/checkout_orchestrator
+    container_name: chomp-checkout-orchestrator
+    ports:
+      - "5011:5011"
+    depends_on:
+      - inventory-ms
+      - payment-ms
+      - rabbitmq
+    environment:
+      - INVENTORY_SERVICE_URL=http://inventory-ms:5001/api/v1/inventory
+      - PAYMENT_SERVICE_URL=http://payment-ms:5003/api/v1/payments/charge
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ./backend/checkout_orchestrator:/app
+    command: gunicorn --bind 0.0.0.0:5011 --reload app:app
+    networks:
+      - chomp-network
+
   order-ms:
     build: ./backend/order_ms
     container_name: chomp-order-ms
@@ -148,23 +186,20 @@ services:
     networks:
       - chomp-network
 
-  notification-ms:
-    build: ./backend/notification_ms
-    container_name: chomp-notification-ms
+  alert-ms:
+    build: ./backend/alert_ms
+    container_name: chomp-alert-ms
     ports:
       - "5004:5004"
     depends_on:
       - rabbitmq
-      - user-ms
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - USER_SERVICE_URL=http://user-ms:5006/api/v1/users
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
       - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
-      - TWILIO_TRIAL_DESTINATION_NUMBER=${TWILIO_TRIAL_DESTINATION_NUMBER}
     volumes:
-      - ./backend/notification_ms:/app
+      - ./backend/alert_ms:/app
     networks:
       - chomp-network
 

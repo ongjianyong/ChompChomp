@@ -2,12 +2,21 @@ _format_version: "3.0"
 _transform: true
 
 services:
-  - name: inventory-service
-    url: http://inventory-ms:5001
+  - name: discovery-orchestrator
+    url: http://discovery-orchestrator:5010
     routes:
-      - name: inventory-route
+      - name: discovery-route
         paths:
-          - /api/v1/inventory
+          - /api/v1/discovery
+          - /api/v1/inventory # Redirect old path to orchestrator
+        strip_path: false
+
+  - name: checkout-orchestrator
+    url: http://checkout-orchestrator:5011
+    routes:
+      - name: checkout-route
+        paths:
+          - /api/v1/checkout
         strip_path: false
 
   - name: order-service
@@ -32,12 +41,13 @@ services:
           - /api/v1/payments
         strip_path: false
 
-  - name: notification-service
-    url: http://notification-ms:5004
+  - name: alert-service
+    url: http://alert-ms:5004
     routes:
-      - name: notification-route
+      - name: alert-route
         paths:
           - /api/v1/notifications
+          - /api/v1/alert
         strip_path: false
 
   - name: logistics-service

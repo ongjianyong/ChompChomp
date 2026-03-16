@@ -62,7 +62,7 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
         setIsProcessing(true);
         setError(null);
         try {
-            const orderResponse = await fetch('http://localhost:8000/api/v1/orders', {
+            const orderResponse = await fetch('http://localhost:8000/api/v1/checkout/reserve', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -70,12 +70,9 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                 },
                 body: JSON.stringify({
                     itemID: box.itemID,
-                    merchantID: box.merchantID,
-                    customerID: user.email,
-                    price: box.price,
-                    deliveryType: deliveryType,
-                    quantity: quantity,
-                    expiry: 60
+                    userID: user.id || user.email, // Using ID to be consistent with MS
+                    itemName: box.name,
+                    quantity: quantity
                 })
             });
 
@@ -107,42 +104,27 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
         setError(null);
 
         try {
-            // 2. Mock payment via Stripe
-            const mockToken = 'tok_visa';
-            const paymentResponse = await fetch('http://localhost:8000/api/v1/payments/charge', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderID: orderData.orderID,
-                    amount: total,
-                    token: mockToken
-                })
-            });
-
-            if (!paymentResponse.ok) {
-                const errData = await paymentResponse.json();
-                throw new Error(errData.error || "Payment failed");
-            }
-
-            const paymentData = await paymentResponse.json();
-
-            // 3. Confirm payment in Order MS
-            const confirmResponse = await fetch(`http://localhost:8000/api/v1/orders/${orderData.orderID}/pay`, {
+            // Simplified Orchestration call
+            const confirmResponse = await fetch(`http://localhost:8000/api/v1/checkout/pay`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ paymentID: paymentData.paymentID })
+                body: JSON.stringify({ 
+                    sessionID: orderData.sessionID,
+                    amount: total
+                })
             });
 
             if (confirmResponse.ok) {
+                const finalData = await confirmResponse.json();
                 // SUCCESS: Clear persistence
                 localStorage.removeItem(`res_${user.email}_${box.itemID}`);
-                onPaymentSuccess(orderData.orderID);
+                onPaymentSuccess(finalData.orderID);
             } else {
                 const errData = await confirmResponse.json();
-                throw new Error(errData.error || "Reservation expired! Item was released.");
+                throw new Error(errData.error || "Payment failed or reservation expired.");
             }
 
         } catch (err) {

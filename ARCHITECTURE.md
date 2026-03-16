@@ -44,40 +44,49 @@ Docker is used to package each microservice and infrastructure component into it
 - **Role:** Handles asynchronous, background communication between microservices using events.
 - **How it works:** Instead of making microservices wait for each other, they "publish" events to RabbitMQ. For example, when an order is paid, `payment_ms` publishes an `order.paid` event. RabbitMQ holds this message and routes it to any service that cares (like `logistics_ms` to find a driver, and `notification_ms` to send an SMS).
 
-## The Microservices
+## Service-Oriented Architecture (SOA)
+ChompChomp follows SOA principles by distinguishing between **Atomic Services** (which manage core entity data) and **Composite (Orchestrator) Services** (which manage business workflows).
 
-### 1. User MS (`user_ms`)
-- **Role:** Handles user authentication, registration, and profile management.
+### 1. Atomic Services ("The Nouns")
+These services are highly specialized, decoupled, and do not call other local services directly. They provide the fundamental building blocks of the system.
 
-### 2. Inventory MS (`inventory_ms`)
-- **Role:** Manages the restaurant listings, food boxes, and tracks available stock quantities. It handles locking and releasing stock during checkout.
+- **Account MS (`user_ms`)**: Pure CRUD for user and merchant profiles.
+- **Catalog MS (`inventory_ms`)**: Pure CRUD for food box listings and stock management.
+- **Transaction MS (`payment_ms`)**: Interface for Stripe payment processing.
+- **Alert MS (`alert_ms`)**: A generic SMS gateway (Twilio).
+- **Order MS (`order_ms`)**: Manages the persistence of order history.
 
-### 3. Order MS (`order_ms`)
-- **Role:** Manages the lifecycle of an order. It creates a temporary reservation, applies the 1-minute timeout, and confirms the final order state when payment succeeds.
+### 2. Composite Orchestrators ("The Verbs")
+These services manage complex business processes by coordinating multiple atomic services. The frontend communicates primarily with these orchestrators.
 
-### 4. Payment MS (`payment_ms`)
-- **Role:** Processes credit card transactions using the Stripe API. It generates the checkout link and verifies payment success.
+- **Discovery Orchestrator**: 
+  - Composes `Account` and `Catalog` data.
+  - Handles external geocoding (OneMap SG).
+  - Calculates distances and handles triggered notifications for new listings.
+- **Checkout Orchestrator**:
+  - Manages the end-to-end reservation and payment lifecycle.
+  - Handles the 1-minute stock reservation timeout logic.
+  - Coordinates `Catalog`, `Order`, and `Payment` services.
 
-### 5. Logistics MS (`logistics_ms`)
-- **Role:** Simulates finding a delivery courier for users who choose delivery instead of pickup.
+## Core Infrastructure Components
 
-### 6. Notification MS (`notification_ms`)
-- **Role:** Sends SMS alerts to users using the Twilio API (e.g., sending receipts after payment).
+### 1. Kong (API Gateway)
+- **Role:** The entry point for all frontend requests. Routes traffic to the high-level Orchestrators as well as basic Account management.
+- **Routes:**
+  - `/api/v1/discovery` -> `discovery-orchestrator`
+  - `/api/v1/checkout` -> `checkout-orchestrator`
+  - `/api/v1/users` -> `user-ms`
 
-## HTTP vs. AMQP: How They Talk to Each Other
+### 2. PostgreSQL (Database)
+Each atomic service has its own independent database schema, ensuring data isolation.
 
-### HTTP (Synchronous / Real-Time)
-- **What it is:** The standard web request protocol (like loading a webpage). It is a "request-response" model. The caller waits until the receiver answers.
-- **Where it's used:**
-  - Frontend calling Kong API Gateway.
-  - Kong routing to the internal Microservices.
-  - Microservices making external API calls (e.g., calling Stripe or Twilio).
-  - Microservices communicating when an immediate answer is required (e.g., `order_ms` calling `inventory_ms` to check if stock is available *right now* to complete a reservation).
+### 3. RabbitMQ (Message Broker)
+Used for asynchronous cross-service communication (e.g., broadcasting `alert.send` events that the `Alert MS` consumes to send SMS).
 
-### AMQP / RabbitMQ (Asynchronous / Background)
-- **What it is:** A "publish-subscribe" model. A service shouts a message ("Event happened!") into a queue and immediately moves on. Other services listen to the queue and react whenever they have time.
-- **Where it's used:**
-  - `payment_ms` telling the system an order was paid.
-  - `logistics_ms` hearing about the payment and finding a driver in the background.
-  - `notification_ms` hearing about the payment and sending an SMS in the background.
-- **Why?** If sending an SMS via Twilio takes 3 seconds, we don't want the user's browser loading spinner to freeze for 3 seconds while waiting. We use AMQP so `payment_ms` can instantly return a "Success" page to the user, while the SMS handles itself independently in the background.
+## Interaction Models
+
+### Orchestration (Synchronous Workflow)
+Used when a business process requires immediate coordination. The **Checkout Orchestrator** calls the **Inventory MS** to reserve stock and the **Payment MS** to charge the user in a single cohesive flow.
+
+### Event-Driven (Asynchronous Workflow)
+Used for decoupled side-effects. When the **Discovery Orchestrator** creates a listing, it publishes an event. The **Alert MS** listens for these events to send SMS notifications without blocking the listing creation process.

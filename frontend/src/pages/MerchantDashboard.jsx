@@ -49,7 +49,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
         try {
             const url = editingItemId
                 ? `http://localhost:8000/api/v1/inventory/${editingItemId}`
-                : 'http://localhost:8000/api/v1/inventory';
+                : 'http://localhost:8000/api/v1/discovery/listings';
             const method = editingItemId ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
@@ -61,6 +61,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                 body: JSON.stringify({
                     merchantID: user.id,
                     merchant_name: user.name,
+                    postal_code: user.postal_code, // Include for geocoding
                     ...formData,
                     quantity: parseInt(formData.quantity),
                     price: parseFloat(formData.price),
