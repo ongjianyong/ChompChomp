@@ -70,7 +70,8 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                 },
                 body: JSON.stringify({
                     itemID: box.itemID,
-                    userID: user.id || user.email, // Using ID to be consistent with MS
+                    userID: user.email, 
+                    merchantID: box.merchantID,
                     itemName: box.name,
                     quantity: quantity
                 })
@@ -113,7 +114,8 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                 },
                 body: JSON.stringify({ 
                     sessionID: orderData.sessionID,
-                    amount: total
+                    amount: total,
+                    token: "tok_visa" // Simulated token for demo
                 })
             });
 
@@ -178,12 +180,6 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                             <span className="text-gray-500">{box.name} x {quantity}</span>
                             <span>${(box.price * quantity).toFixed(2)}</span>
                         </div>
-                        {deliveryType === 'delivery' && (
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Delivery Fee</span>
-                                <span>$5.00</span>
-                            </div>
-                        )}
                         <div className="flex justify-between font-bold pt-2 border-t border-gray-200">
                             <span>Total</span>
                             <span>${total.toFixed(2)}</span>

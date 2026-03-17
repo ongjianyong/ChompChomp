@@ -56,7 +56,12 @@ These services are highly specialized, decoupled, and do not call other local se
 - **`alert-ms`**: A generic SMS gateway (Twilio/Mock).
 - **`order-ms`**: Manages the persistence of order history.
 
-### 2. Composite Orchestrators ("The Verbs")
+### 3. External Services
+- **OneMap SG API**: Used for geocoding Singapore postal codes into coordinates (Latitude/Longitude).
+- **Stripe API**: Used for secure payment processing (interfaced via `payment-ms`).
+- **Twilio API**: Used for sending SMS alerts (interfaced via `alert-ms`).
+
+### 4. Composite Orchestrators ("The Verbs")
 These services manage complex business processes by coordinating multiple atomic services. The frontend communicates primarily with these orchestrators.
 
 - **Discovery Orchestrator**: 

@@ -70,7 +70,7 @@ services:
         condition: service_started
     volumes:
       - ./backend/user_ms:/app
-    command: gunicorn --bind 0.0.0.0:5006 --reload app:app
+    command: gunicorn --bind 0.0.0.0:5006 --reload --access-logfile - app:app
     networks:
       - chomp-network
 
@@ -89,7 +89,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
     volumes:
       - ./backend/inventory_ms:/app
-    command: gunicorn --bind 0.0.0.0:5001 --reload app:app
+    command: gunicorn --bind 0.0.0.0:5001 --reload --access-logfile - app:app
     networks:
       - chomp-network
 
@@ -108,7 +108,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
     volumes:
       - ./backend/discovery_orchestrator:/app
-    command: gunicorn --bind 0.0.0.0:5010 --reload app:app
+    command: gunicorn --bind 0.0.0.0:5010 --reload --access-logfile - app:app
     networks:
       - chomp-network
 
@@ -129,7 +129,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
     volumes:
       - ./backend/checkout_orchestrator:/app
-    command: gunicorn --bind 0.0.0.0:5011 --reload app:app
+    command: gunicorn --bind 0.0.0.0:5011 --reload --access-logfile - app:app
     networks:
       - chomp-network
 
@@ -151,7 +151,7 @@ services:
       - PAYMENT_URL=http://payment-ms:5003
     volumes:
       - ./backend/order_ms:/app
-    command: gunicorn --bind 0.0.0.0:5002 --reload app:app
+    command: gunicorn --bind 0.0.0.0:5002 --reload --access-logfile - app:app
     networks:
       - chomp-network
 
@@ -165,7 +165,7 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     volumes:
       - ./backend/payment_ms:/app
-    command: gunicorn --bind 0.0.0.0:5003 --reload app:app
+    command: gunicorn --bind 0.0.0.0:5003 --reload --access-logfile - app:app
     networks:
       - chomp-network
 

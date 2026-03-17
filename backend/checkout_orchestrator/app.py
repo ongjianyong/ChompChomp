@@ -72,6 +72,7 @@ def reserve():
                 "itemID": item_id,
                 "quantity": quantity,
                 "userID": user_id,
+                "merchantID": data.get('merchantID'),
                 "itemName": item_name
             }
             
@@ -104,11 +105,10 @@ def process_payment():
         
     try:
         # 1. Call Atomic Payment MS
-        # (Assuming payment-ms is also refactored to be atomic later)
-        # For now we simulate the orchestration of a payment request
         payment_payload = {
             "amount": data.get('amount'),
             "currency": "sgd",
+            "token": data.get('token', 'tok_visa'),
             "metadata": {"sessionID": session_id}
         }
         pay_resp = requests.post(PAYMENT_SERVICE_URL, json=payment_payload, timeout=10)
@@ -118,18 +118,21 @@ def process_payment():
             active_sessions[session_id]['status'] = 'paid'
             
             # 3. Persist Order History (Atomic Persistence)
+            persistent_order_id = 0
             try:
                 order_payload = {
                     "customerID": session['userID'],
-                    "merchantID": data.get('merchantID') or "MOCK_MERCHANT", # In real app we'd get this from session
+                    "merchantID": session.get('merchantID') or "MOCK_MERCHANT",
                     "itemID": session['itemID'],
                     "quantity": session['quantity'],
-                    "price": session.get('price', data.get('amount')), # Fallback to amount
+                    "price": session.get('price', data.get('amount')),
                     "total_paid": data.get('amount'),
                     "paymentID": pay_resp.json().get('paymentID'),
                     "status": "paid"
                 }
-                requests.post(ORDER_SERVICE_URL, json=order_payload, timeout=5)
+                order_resp = requests.post(ORDER_SERVICE_URL, json=order_payload, timeout=5)
+                if order_resp.status_code == 201:
+                    persistent_order_id = order_resp.json().get('orderID', 0)
             except Exception as e:
                 print(f"FAILED TO PERSIST ORDER HISTORY: {e}")
 
@@ -139,7 +142,7 @@ def process_payment():
                 "message": f"ChompChomp: Payment successful for {session['itemName']}! Thank you for rescuing food."
             })
             
-            return jsonify({"message": "Payment successful", "orderID": session_id}), 200
+            return jsonify({"message": "Payment successful", "orderID": persistent_order_id}), 200
             
         return jsonify(pay_resp.json()), pay_resp.status_code
         

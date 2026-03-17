@@ -14,7 +14,7 @@ def process_payment():
     data = request.json
     order_id = data.get('orderID')
     amount = data.get('amount') # in dollars, e.g., 30.00
-    token = data.get('token') # stripe card token or payment method ID
+    token = data.get('token', 'tok_visa') # Default to simulated token for demo
 
     try:
         # Create a PaymentIntent on Stripe

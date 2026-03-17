@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import Button from './Button';
 
 const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
-    const [deliveryType, setDeliveryType] = useState('pickup'); // 'pickup' or 'delivery'
     const [quantity, setQuantity] = useState(1);
-    const deliveryFee = 5.00;
+    const deliveryType = 'pickup';
 
     if (!isOpen || !box) return null;
 
     const maxQty = box.quantity || 1;
     const itemTotal = box.price * quantity;
-    const totalPrice = itemTotal + (deliveryType === 'delivery' ? deliveryFee : 0);
+    const totalPrice = itemTotal;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -46,40 +45,22 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 gap-8">
                         <div className="space-y-4">
-                            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Quantity</label>
-                            <div className="flex items-center border border-black">
+                            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Select Quantity</label>
+                            <div className="flex items-center border border-black max-w-[200px]">
                                 <button
                                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                    className="px-4 py-2 hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 hover:bg-gray-100 transition-colors border-r border-black"
                                 >
                                     -
                                 </button>
-                                <span className="flex-1 text-center font-bold text-sm">{quantity}</span>
+                                <span className="flex-1 text-center font-bold text-lg">{quantity}</span>
                                 <button
                                     onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
-                                    className="px-4 py-2 hover:bg-gray-100 transition-colors"
+                                    className="px-6 py-3 hover:bg-gray-100 transition-colors border-l border-black"
                                 >
                                     +
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Method</label>
-                            <div className="flex border border-black overflow-hidden">
-                                <button
-                                    onClick={() => setDeliveryType('pickup')}
-                                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all ${deliveryType === 'pickup' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'}`}
-                                >
-                                    Pickup
-                                </button>
-                                <button
-                                    onClick={() => setDeliveryType('delivery')}
-                                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-all ${deliveryType === 'delivery' ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-50'}`}
-                                >
-                                    Delivery
                                 </button>
                             </div>
                         </div>
@@ -89,7 +70,7 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex flex-col">
                                 <span className="text-gray-500 text-xs uppercase tracking-widest">Order Total</span>
-                                <span className="text-[10px] text-gray-400">{quantity}x Item + {deliveryType === 'delivery' ? '$5.00 Fee' : 'Free Pickup'}</span>
+                                <span className="text-[10px] text-gray-400">{quantity}x Box{quantity > 1 ? 'es' : ''} for Store Pickup</span>
                             </div>
                             <span className="text-2xl font-bold">${totalPrice.toFixed(2)}</span>
                         </div>
