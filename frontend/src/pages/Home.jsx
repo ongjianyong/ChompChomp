@@ -157,8 +157,8 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
 
                                             <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                                                 <div className="flex flex-col">
-                                                    <span className="text-gray-400 line-through text-xs">${product.original_price?.toFixed(2)}</span>
-                                                    <span className="text-black font-bold text-lg">${product.price?.toFixed(2)}</span>
+                                                    <span className="text-gray-400 line-through text-xs">${product.original_price?.toFixed(2) || '0.00'}</span>
+                                                    <span className="text-black font-bold text-lg">${product.price?.toFixed(2) || '0.00'}</span>
                                                     {product.distance !== undefined && product.distance !== null && (
                                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
                                                             📍 {product.distance}km away

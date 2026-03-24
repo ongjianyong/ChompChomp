@@ -223,8 +223,8 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
-                                {items.map((item) => (
-                                    <tr key={item.itemID} className="hover:bg-gray-50 transition-colors group">
+                                {items.map((item, index) => (
+                                    <tr key={item.itemID || index} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-8 py-6 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-12 w-12 bg-gray-100 border border-gray-200 overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
@@ -237,8 +237,8 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-black">${item.price.toFixed(2)}</div>
-                                            <div className="text-[10px] text-gray-400 line-through tracking-widest">${item.original_price.toFixed(2)}</div>
+                                            <div className="text-sm font-bold text-black">${item.price?.toFixed(2) || '0.00'}</div>
+                                            <div className="text-[10px] text-gray-400 line-through tracking-widest">${item.original_price?.toFixed(2) || '0.00'}</div>
                                         </td>
                                         <td className="px-8 py-6 whitespace-nowrap">
                                             <div className="text-sm text-black font-medium">{item.quantity} units</div>
