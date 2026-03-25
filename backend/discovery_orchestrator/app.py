@@ -80,6 +80,11 @@ def get_listings():
         # 2. Composition & Logic
         result = []
         for item in items:
+            # Filter out out-of-stock items for the customer dashboard
+            qty = item.get('Quantity', item.get('quantity', 0))
+            if int(qty or 0) <= 0:
+                continue
+
             m_id = str(item.get('merchantID')) # Ensure string
             m_lat, m_long = merchant_coords.get(m_id, (None, None))
             
