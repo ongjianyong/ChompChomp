@@ -86,7 +86,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                             onClick={() => setActiveTab('browse')}
                             className={`pb-4 text-xs font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === 'browse' ? 'text-black' : 'text-gray-300 hover:text-gray-500'}`}
                         >
-                            Today's Surplus
+                            Listings
                             {activeTab === 'browse' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-black"></div>}
                         </button>
                         <button

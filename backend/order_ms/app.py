@@ -92,6 +92,55 @@ def get_order(order_id):
     finally:
         db.close()
 
+@app.route('/api/v1/orders/merchant/<string:merchant_id>', methods=['GET'])
+def get_merchant_orders(merchant_id):
+    """Fetch all orders for a specific merchant."""
+    db = SessionLocal()
+    try:
+        orders = db.query(Order).filter(Order.merchantID == merchant_id).order_by(Order.orderID.desc()).all()
+        return jsonify([{
+            "orderID": o.orderID,
+            "customerID": o.customerID,
+            "merchantID": o.merchantID,
+            "merchant_name": o.merchant_name or "Unknown Merchant",
+            "itemID": o.itemID,
+            "total_paid": o.total_paid,
+            "status": o.status,
+            "paymentID": o.paymentID,
+            "quantity": o.quantity
+        } for o in orders]), 200
+    finally:
+        db.close()
+
+@app.route('/api/v1/orders/<int:order_id>/status', methods=['PUT'])
+def update_order_status(order_id):
+    """Update the status of a specific order."""
+    data = request.json
+    new_status = data.get('status')
+    if not new_status:
+        return jsonify({"error": "status field is required"}), 400
+        
+    db = SessionLocal()
+    try:
+        order = db.query(Order).get(order_id)
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+            
+        order.status = new_status
+        db.commit()
+        db.refresh(order)
+        
+        return jsonify({
+            "orderID": order.orderID,
+            "status": order.status,
+            "message": "Status updated successfully"
+        }), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5002))
     app.run(host='0.0.0.0', port=port)
