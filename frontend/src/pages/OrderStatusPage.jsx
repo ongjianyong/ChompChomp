@@ -48,7 +48,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Order Tracking (Self-Pickup)</p>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Order Tracking &bull; {order.merchant_name || 'Self-Pickup'}</p>
                             <h1 className="text-4xl font-display uppercase tracking-tight">#{String(orderId)}</h1>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -82,7 +82,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                             <div className="text-center space-y-6">
                                 <div className="text-4xl animate-bounce">🍳</div>
                                 <div>
-                                    <h3 className="text-xl font-medium mb-2">Merchant is preparing your box</h3>
+                                    <h3 className="text-xl font-medium mb-2">{order.merchant_name || 'Merchant'} is preparing your box</h3>
                                     <p className="text-sm text-gray-500 max-w-sm mx-auto">Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.</p>
                                 </div>
                             </div>

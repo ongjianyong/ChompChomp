@@ -16,6 +16,7 @@ class Order(Base):
     orderID = Column(Integer, primary_key=True, index=True)
     customerID = Column(String, index=True)
     merchantID = Column(String, index=True)
+    merchant_name = Column(String, nullable=True) # Added for better history display
     itemID = Column(Integer)
     item_price = Column(Float)
     total_paid = Column(Float)
@@ -34,6 +35,7 @@ def create_order():
         new_order = Order(
             customerID=data.get('customerID'),
             merchantID=data.get('merchantID'),
+            merchant_name=data.get('merchant_name'), # Capture name at time of order
             itemID=data.get('itemID'),
             quantity=data.get('quantity', 1),
             item_price=data.get('price'),
@@ -60,6 +62,7 @@ def get_user_orders(customer_id):
             "orderID": o.orderID,
             "customerID": o.customerID,
             "merchantID": o.merchantID,
+            "merchant_name": o.merchant_name or "Unknown Merchant",
             "itemID": o.itemID,
             "total_paid": o.total_paid,
             "status": o.status,

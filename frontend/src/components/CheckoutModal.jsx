@@ -70,8 +70,9 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                 },
                 body: JSON.stringify({
                     itemID: box.itemID,
-                    userID: user.email, 
+                    userID: user.id, // BUG FIX: Use numeric ID
                     merchantID: box.merchantID,
+                    merchant_name: box.merchant_name, // Pass name for history display
                     itemName: box.name,
                     quantity: quantity
                 })

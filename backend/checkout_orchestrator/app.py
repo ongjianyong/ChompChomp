@@ -123,6 +123,7 @@ def process_payment():
                 order_payload = {
                     "customerID": session['userID'],
                     "merchantID": session.get('merchantID') or "MOCK_MERCHANT",
+                    "merchant_name": session.get('merchant_name') or "A Good Samaritan", # Pass merchant name
                     "itemID": session['itemID'],
                     "quantity": session['quantity'],
                     "price": session.get('price', data.get('amount')),
