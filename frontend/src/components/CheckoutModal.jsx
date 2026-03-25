@@ -46,11 +46,7 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
             setError("Reservation expired! Please restart checkout.");
             setIsReserved(false);
             if (user && box) {
-                // Proactively tell backend to release stock
-                fetch(`http://localhost:8000/api/v1/orders/${orderData.orderID}/cancel`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
+                // The backend automatically releases stock when the timer expires
                 localStorage.removeItem(`res_${user.email}_${box.itemID}`);
             }
         }

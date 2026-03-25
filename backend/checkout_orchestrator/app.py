@@ -40,9 +40,13 @@ def checkout_timeout_worker(session_id, item_id, quantity, item_name):
     if session_id in active_sessions and active_sessions[session_id]['status'] == 'pending':
         print(f"[CHECKOUT] 🕒 Session {session_id} timed out. Releasing stock.")
         try:
-            # OUTSYSTEMS FIX: Redundant passing to avoid parsing errors
-            release_url = f"{INVENTORY_SERVICE_URL}/release?ItemId={item_id}&Quantity={int(quantity)}&RequestedQuantity={int(quantity)}"
-            requests.post(release_url, json={"Quantity": int(quantity), "RequestedQuantity": int(quantity)}, timeout=5)
+            # OUTSYSTEMS FIX: When there is only ONE input parameter in the body and it's a basic type (Integer),
+            # OutSystems expects the RAW value in the body, NOT a JSON object.
+            release_url = f"{INVENTORY_SERVICE_URL}/release?ItemId={item_id}"
+            
+            import sys
+            print(f"[DEBUG] RELEASING STOCK (RAW INT): POST {release_url} BODY: {int(quantity)}", file=sys.stderr)
+            requests.post(release_url, json=int(quantity), timeout=5)
             
             # 2. Broadcast Re-availability to Alert MS
             publish_event('alert.send', {
