@@ -15,8 +15,8 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
     const [checkoutType, setCheckoutType] = useState('pickup');
     const [checkoutTotal, setCheckoutTotal] = useState(0);
     const [checkoutQuantity, setCheckoutQuantity] = useState(1);
-    const [activeTab, setActiveTab] = useState('browse'); // 'browse' or 'orders'
-    const [maxDist, setMaxDist] = useState(null); // null, 5, 10
+    const [activeTab, setActiveTab] = useState('browse');
+    const [maxDist, setMaxDist] = useState(null);
 
     useEffect(() => {
         if (activeTab === 'browse') {
@@ -25,6 +25,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                 try {
                     let url = 'http://localhost:8000/api/v1/inventory';
                     const params = new URLSearchParams();
+
                     if (user?.lat && user?.long) {
                         params.append('lat', user.lat);
                         params.append('long', user.long);
@@ -32,7 +33,14 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     if (maxDist) {
                         params.append('max_dist', maxDist);
                     }
-                    
+
+                    // Pass customer tier so backend applies correct visibility rules:
+                    // Premium customers see listings immediately.
+                    // Free customers only see listings older than the TTL delay.
+                    if (user?.tier) {
+                        params.append('tier', user.tier);
+                    }
+
                     const queryString = params.toString();
                     if (queryString) url += `?${queryString}`;
 
@@ -49,9 +57,8 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
             };
             fetchItems();
         }
-    }, [activeTab, user?.lat, user?.long, maxDist]);
+    }, [activeTab, user?.lat, user?.long, user?.tier, maxDist]);
 
-    // If user is logged in, we don't show the massive hero as per request
     const isGuest = !user;
 
     return (
@@ -109,12 +116,23 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 </h2>
                             </div>
 
+                            {/* Tier badge — shows customer their access level */}
+                            {!isGuest && user?.role === 'user' && (
+                                <div className={`ml-4 px-3 py-1 text-[10px] font-bold uppercase tracking-widest border ${
+                                    user?.tier === 'premium'
+                                        ? 'bg-amber-50 border-amber-400 text-amber-600'
+                                        : 'bg-gray-50 border-gray-300 text-gray-500'
+                                }`}>
+                                    {user?.tier === 'premium' ? '⚡ Premium — Early Access' : 'Free — Delayed Access'}
+                                </div>
+                            )}
+
                             {/* Distance Filter */}
                             {!isGuest && user?.lat && (
                                 <div className="flex-grow flex justify-end items-center space-x-3">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Within</span>
-                                    <select 
-                                        value={maxDist || ''} 
+                                    <select
+                                        value={maxDist || ''}
                                         onChange={(e) => setMaxDist(e.target.value ? Number(e.target.value) : null)}
                                         className="bg-transparent border-b border-black text-xs font-bold uppercase tracking-widest py-1 outline-none"
                                     >
@@ -131,7 +149,9 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                             <div className="text-center py-20 grayscale opacity-50">Loading current listings...</div>
                         ) : items.length === 0 ? (
                             <div className="border border-gray-100 py-32 text-center text-gray-400 uppercase tracking-widest text-sm">
-                                No active listings right now. check back soon.
+                                {user?.tier !== 'premium'
+                                    ? 'No listings available yet. Premium members get early access — upgrade to see listings first.'
+                                    : 'No active listings right now. Check back soon.'}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -181,7 +201,6 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                                             try {
                                                                 const { data, expiresAt } = JSON.parse(savedRes);
                                                                 if (expiresAt > Date.now()) {
-                                                                    // Resume checkout directly
                                                                     setSelectedBox(product);
                                                                     setCheckoutQuantity(data.quantity || 1);
                                                                     setCheckoutType(data.deliveryType || 'pickup');
