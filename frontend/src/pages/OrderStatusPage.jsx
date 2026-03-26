@@ -35,7 +35,12 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
         { 
             key: 'ready', 
             label: 'Ready for Pickup', 
-            done: order.status === 'ready_for_pickup' 
+            done: order.status === 'ready_for_pickup' || order.status === 'completed' 
+        },
+        {
+            key: 'completed',
+            label: 'Collected',
+            done: order.status === 'completed'
         }
     ];
 
@@ -48,7 +53,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Order Tracking (Self-Pickup)</p>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Order Tracking &bull; {order.merchant_name || 'Self-Pickup'}</p>
                             <h1 className="text-4xl font-display uppercase tracking-tight">#{String(orderId)}</h1>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -56,7 +61,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                 {order.quantity || 1} Units
                             </div>
                             <div className="bg-black text-white px-4 py-2 text-xs font-bold uppercase tracking-widest">
-                                {order.status === 'ready_for_pickup' ? 'READY' : 'PREPARING'}
+                                {order.status === 'completed' ? 'COMPLETED' : order.status === 'ready_for_pickup' ? 'READY' : 'PREPARING'}
                             </div>
                         </div>
                     </div>
@@ -78,15 +83,32 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
 
                     {/* Status Content */}
                     <div className="bg-gray-50 p-12 border border-gray-100">
-                        {order.status !== 'ready_for_pickup' ? (
-                            <div className="text-center space-y-6">
-                                <div className="text-4xl animate-bounce">🍳</div>
+                        {order.status === 'completed' ? (
+                            <div className="text-center space-y-8">
+                                <div className="flex justify-center">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-75"></div>
+                                        <div className="relative bg-green-100 rounded-full p-4">
+                                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div>
-                                    <h3 className="text-xl font-medium mb-2">Merchant is preparing your box</h3>
-                                    <p className="text-sm text-gray-500 max-w-sm mx-auto">Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.</p>
+                                    <h3 className="text-2xl font-display uppercase tracking-tight">Order Complete</h3>
+                                    <p className="text-sm text-gray-500 mt-2">Thank you for rescuing food and reducing waste today!</p>
+                                </div>
+                                <div className="p-6 bg-white border border-gray-200 mt-6 inline-block">
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Receipt Info</div>
+                                    <div className="text-sm font-bold text-black uppercase tracking-widest mb-1">Total Paid: ${order.total_paid?.toFixed(2)}</div>
+                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest">Paid via Card</div>
+                                </div>
+                                <div>
+                                    <Button variant="secondary" onClick={onGoHome} className="mt-8 uppercase tracking-widest font-bold">Return to Map</Button>
                                 </div>
                             </div>
-                        ) : (
+                        ) : order.status === 'ready_for_pickup' ? (
                             <div className="text-center space-y-8">
                                 <div className="text-4xl">🛍️</div>
                                 <div>
@@ -98,6 +120,14 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                 </div>
                                 <div>
                                     <Button variant="secondary" onClick={onGoHome} className="mt-4 uppercase tracking-widest font-bold">Return to Map</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center space-y-6">
+                                <div className="text-4xl animate-bounce">🍳</div>
+                                <div>
+                                    <h3 className="text-xl font-medium mb-2">{order.merchant_name || 'Merchant'} is preparing your box</h3>
+                                    <p className="text-sm text-gray-500 max-w-sm mx-auto">Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.</p>
                                 </div>
                             </div>
                         )}

@@ -25,6 +25,10 @@
   h6 {
     @apply font-display tracking-tight text-brand-dark;
   }
+
+  button, [role="button"] {
+    @apply cursor-pointer;
+  }
 }
 
 @layer components {

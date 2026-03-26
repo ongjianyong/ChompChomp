@@ -207,25 +207,27 @@ def get_listings():
 
         for item in items:
             # ── Tier-based visibility ──────────────────────────────
-            # Premium customers see everything immediately.
-            # Free customers cannot see listings younger than FREE_VISIBILITY_SECONDS.
             if user_tier != 'premium':
                 created = item.get('created_at')
                 if created:
                     try:
                         created_dt = datetime.fromisoformat(created.replace('Z', '+00:00'))
-                        # Make naive datetimes timezone-aware
                         if created_dt.tzinfo is None:
                             created_dt = created_dt.replace(tzinfo=timezone.utc)
                         age_seconds = (now - created_dt).total_seconds()
                         if age_seconds < FREE_VISIBILITY_SECONDS:
-                            continue  # Free customer cannot see this listing yet
+                            continue
                     except Exception as e:
                         print(f"[DISCOVERY] Could not parse created_at: {e}")
 
+            # ── Filter out out-of-stock items ──────────────────────
+            qty = item.get('Quantity', item.get('quantity', 0))
+            if int(qty or 0) <= 0:
+                continue
+
             # ── Distance calculation ───────────────────────────────
             m_id = str(item.get('merchantID'))
-            m_lat, m_long = merchant_coords.get(m_id, (None, None))
+            m_lat, m_long = merchant_coords.get(m_id, (None, None))  # ← ADD THIS BACK
 
             dist = None
             if user_lat is not None and user_long is not None and m_lat and m_long:

@@ -11,6 +11,10 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     const [itemToRemove, setItemToRemove] = useState(null);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
 
+    // Orders state
+    const [orders, setOrders] = useState([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+
     // Form state
     const [formData, setFormData] = useState({
         name: '',
@@ -35,8 +39,25 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
             }
         };
 
+        const fetchMerchantOrders = async () => {
+            try {
+                const response = await fetch(`http://localhost:8000/api/v1/orders/merchant/${user.id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setOrders(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch merchant orders:", error);
+            } finally {
+                setOrdersLoading(false);
+            }
+        };
+
         if (user && user.id) {
             fetchMerchantItems();
+            fetchMerchantOrders();
         }
     }, [user]);
 
@@ -114,6 +135,25 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
             }
         } catch (error) {
             console.error("Failed to remove listing:", error);
+        }
+    };
+
+    const handleUpdateOrderStatus = async (orderId, newStatus) => {
+        try {
+            const response = await fetch(`http://localhost:8000/api/v1/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (response.ok) {
+                setOrders(orders.map(o => o.orderID === orderId ? { ...o, status: newStatus } : o));
+            }
+        } catch (error) {
+            console.error("Failed to update order status:", error);
         }
     };
 
@@ -223,8 +263,8 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
-                                {items.map((item) => (
-                                    <tr key={item.itemID} className="hover:bg-gray-50 transition-colors group">
+                                {items.map((item, index) => (
+                                    <tr key={item.itemID || index} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-8 py-6 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-12 w-12 bg-gray-100 border border-gray-200 overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
@@ -237,8 +277,8 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-black">${item.price.toFixed(2)}</div>
-                                            <div className="text-[10px] text-gray-400 line-through tracking-widest">${item.original_price.toFixed(2)}</div>
+                                            <div className="text-sm font-bold text-black">${item.price?.toFixed(2) || '0.00'}</div>
+                                            <div className="text-[10px] text-gray-400 line-through tracking-widest">${item.original_price?.toFixed(2) || '0.00'}</div>
                                         </td>
                                         <td className="px-8 py-6 whitespace-nowrap">
                                             <div className="text-sm text-black font-medium">{item.quantity} units</div>
@@ -251,6 +291,65 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                         <td className="px-8 py-6 whitespace-nowrap text-right text-xs font-bold">
                                             <button onClick={() => handleEditListing(item)} className="text-gray-300 hover:text-black transition-colors uppercase tracking-widest mr-4">Edit</button>
                                             <button onClick={() => confirmRemoveListing(item)} className="text-gray-300 hover:text-red-600 transition-colors uppercase tracking-widest">Remove</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* --- Incoming Orders Section --- */}
+                <h2 className="text-2xl font-display mb-8 mt-16 uppercase tracking-tight">Incoming Orders</h2>
+                <div className="bg-white rounded-none border border-black overflow-hidden shadow-sm">
+                    {ordersLoading ? (
+                        <div className="p-12 text-center text-gray-400 uppercase tracking-widest text-sm grayscale opacity-50">Syncing Incoming Orders...</div>
+                    ) : orders.length === 0 ? (
+                        <div className="p-12 text-center text-gray-400 uppercase tracking-widest text-sm">No incoming orders yet.</div>
+                    ) : (
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Order ID</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Item Info</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pricing</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {orders.map((order, index) => (
+                                    <tr key={order.orderID || index} className="hover:bg-gray-50 transition-colors group">
+                                        <td className="px-8 py-6 whitespace-nowrap">
+                                            <div className="text-sm font-bold text-black">#{order.orderID}</div>
+                                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Cust: {order.customerID}</div>
+                                        </td>
+                                        <td className="px-8 py-6 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-black">Item ID: {order.itemID}</div>
+                                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Qty: {order.quantity}</div>
+                                        </td>
+                                        <td className="px-8 py-6 whitespace-nowrap">
+                                            <div className="text-sm font-bold text-black">${order.total_paid?.toFixed(2) || '0.00'}</div>
+                                        </td>
+                                        <td className="px-8 py-6 whitespace-nowrap">
+                                            <span className={`px-3 py-1 inline-flex text-[10px] font-bold border uppercase tracking-widest ${
+                                                order.status === 'completed' ? 'border-gray-200 bg-gray-50 text-gray-500' : 
+                                                order.status === 'ready_for_pickup' ? 'border-blue-200 bg-blue-50 text-blue-700' :
+                                                'border-orange-200 bg-orange-50 text-orange-700'
+                                            }`}>
+                                                {order.status.replace(/_/g, ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6 whitespace-nowrap text-right text-xs font-bold">
+                                            {order.status === 'paid' && (
+                                                <button onClick={() => handleUpdateOrderStatus(order.orderID, 'ready_for_pickup')} className="text-white bg-black hover:bg-gray-800 transition-colors uppercase tracking-widest px-4 py-2 cursor-pointer">Mark Ready</button>
+                                            )}
+                                            {order.status === 'ready_for_pickup' && (
+                                                <button onClick={() => handleUpdateOrderStatus(order.orderID, 'completed')} className="text-white bg-green-600 hover:bg-green-700 transition-colors uppercase tracking-widest px-4 py-2 cursor-pointer">Process Pickup</button>
+                                            )}
+                                            {order.status === 'completed' && (
+                                                <span className="text-gray-400 uppercase tracking-widest">Done</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

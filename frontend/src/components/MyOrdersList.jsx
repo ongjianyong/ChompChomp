@@ -8,7 +8,8 @@ const MyOrdersList = ({ user, onViewOrder }) => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/v1/orders/user/${encodeURIComponent(user.email)}`, {
+                // BUG FIX: Use user.id (numeric/string ID) instead of email to match order_ms customerID
+                const response = await fetch(`http://localhost:8000/api/v1/orders/user/${encodeURIComponent(user.id)}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 if (response.ok) {
@@ -22,7 +23,7 @@ const MyOrdersList = ({ user, onViewOrder }) => {
             }
         };
         fetchOrders();
-    }, [user.email]);
+    }, [user.id]);
 
     if (loading) return <div className="text-center py-20 grayscale opacity-50 uppercase tracking-widest text-sm">Fetching your orders...</div>;
 

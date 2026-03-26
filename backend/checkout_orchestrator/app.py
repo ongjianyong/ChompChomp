@@ -6,6 +6,7 @@ import threading
 import time
 import json
 import pika
+import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -39,8 +40,13 @@ def checkout_timeout_worker(session_id, item_id, quantity, item_name):
     if session_id in active_sessions and active_sessions[session_id]['status'] == 'pending':
         print(f"[CHECKOUT] 🕒 Session {session_id} timed out. Releasing stock.")
         try:
-            # 1. Release Stock in Catalog MS
-            requests.post(f"{INVENTORY_SERVICE_URL}/{item_id}/release", json={"quantity": quantity}, timeout=5)
+            # OUTSYSTEMS FIX: When there is only ONE input parameter in the body and it's a basic type (Integer),
+            # OutSystems expects the RAW value in the body, NOT a JSON object.
+            release_url = f"{INVENTORY_SERVICE_URL}/release?ItemId={item_id}"
+            
+            import sys
+            print(f"[DEBUG] RELEASING STOCK (RAW INT): POST {release_url} BODY: {int(quantity)}", file=sys.stderr)
+            requests.post(release_url, json=int(quantity), timeout=5)
             
             # 2. Broadcast Re-availability to Alert MS
             publish_event('alert.send', {
@@ -62,8 +68,18 @@ def reserve():
     item_name = data.get('itemName', 'A food box')
     
     try:
-        # 1. Call Atomic Catalog MS to reserve stock
-        resp = requests.post(f"{INVENTORY_SERVICE_URL}/{item_id}/reserve", json={"quantity": quantity}, timeout=5)
+        # OUTSYSTEMS FIX: When there is only ONE input parameter in the body and it's a basic type (Integer),
+        # OutSystems expects the RAW value in the body, NOT a JSON object.
+        reserve_url = f"{INVENTORY_SERVICE_URL}/reserve?ItemId={item_id}"
+        
+        # Send just the integer '1', not '{"Quantity": 1}'
+        payload = int(quantity)
+        
+        import sys
+        print(f"[DEBUG] REQUEST (RAW INT): POST {reserve_url} BODY: {payload}", file=sys.stderr)
+        
+        # We specify headers explicitly just to be safe, but json=payload also sets application/json
+        resp = requests.post(reserve_url, json=payload, timeout=5)
         
         if resp.status_code == 200:
             session_id = f"sess_{int(time.time())}_{item_id}"
@@ -73,6 +89,7 @@ def reserve():
                 "quantity": quantity,
                 "userID": user_id,
                 "merchantID": data.get('merchantID'),
+                "merchant_name": data.get('merchant_name'), # Capture name
                 "itemName": item_name
             }
             
@@ -85,7 +102,13 @@ def reserve():
                 "expires_in": 60
             }), 200
             
-        return jsonify(resp.json()), resp.status_code
+        # Handle non-JSON or error responses gracefully
+        print(f"[DEBUG] OutSystems returned {resp.status_code}: {resp.text}", file=sys.stderr)
+        try:
+            error_data = resp.json()
+        except:
+            error_data = {"error": f"Atomic service returned {resp.status_code}", "details": resp.text}
+        return jsonify(error_data), resp.status_code
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -123,9 +146,10 @@ def process_payment():
                 order_payload = {
                     "customerID": session['userID'],
                     "merchantID": session.get('merchantID') or "MOCK_MERCHANT",
+                    "merchant_name": session.get('merchant_name') or "A Good Samaritan",
                     "itemID": session['itemID'],
                     "quantity": session['quantity'],
-                    "price": session.get('price', data.get('amount')),
+                    "price": data.get('amount'),
                     "total_paid": data.get('amount'),
                     "paymentID": pay_resp.json().get('paymentID'),
                     "status": "paid"

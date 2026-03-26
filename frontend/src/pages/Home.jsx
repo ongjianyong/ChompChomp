@@ -93,7 +93,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                             onClick={() => setActiveTab('browse')}
                             className={`pb-4 text-xs font-bold uppercase tracking-[0.2em] transition-all relative ${activeTab === 'browse' ? 'text-black' : 'text-gray-300 hover:text-gray-500'}`}
                         >
-                            Today's Surplus
+                            Listings
                             {activeTab === 'browse' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-black"></div>}
                         </button>
                         <button
@@ -177,8 +177,8 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
 
                                             <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                                                 <div className="flex flex-col">
-                                                    <span className="text-gray-400 line-through text-xs">${product.original_price?.toFixed(2)}</span>
-                                                    <span className="text-black font-bold text-lg">${product.price?.toFixed(2)}</span>
+                                                    <span className="text-gray-400 line-through text-xs">${product.original_price?.toFixed(2) || '0.00'}</span>
+                                                    <span className="text-black font-bold text-lg">${product.price?.toFixed(2) || '0.00'}</span>
                                                     {product.distance !== undefined && product.distance !== null && (
                                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
                                                             📍 {product.distance}km away
