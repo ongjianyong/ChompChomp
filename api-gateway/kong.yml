@@ -9,6 +9,7 @@ services:
         paths:
           - /api/v1/discovery
           - /api/v1/inventory # Redirect old path to orchestrator
+          - /graphql
         strip_path: false
 
   - name: checkout-orchestrator

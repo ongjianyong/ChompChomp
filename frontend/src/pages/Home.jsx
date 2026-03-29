@@ -23,34 +23,50 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
             const fetchItems = async () => {
                 setLoading(true);
                 try {
-                    let url = 'http://localhost:8000/api/v1/inventory';
-                    const params = new URLSearchParams();
+                    // --- GRAPHQL (Scenario 2 BTL) ---
+                    // Eliminating REST over-fetching by specifying exact fields needed for the UI
+                    const query = `
+                        query GetListings($lat: Float, $long: Float, $maxDist: Float, $tier: String) {
+                            listings(lat: $lat, long: $long, maxDist: $maxDist, tier: $tier) {
+                                itemID
+                                name
+                                merchantName
+                                status
+                                quantity
+                                originalPrice
+                                price
+                                distance
+                            }
+                        }
+                    `;
+                    
+                    const variables = {
+                        lat: user?.lat ? parseFloat(user.lat) : null,
+                        long: user?.long ? parseFloat(user.long) : null,
+                        maxDist: maxDist ? parseFloat(maxDist) : null,
+                        tier: user?.tier || 'free'
+                    };
 
-                    if (user?.lat && user?.long) {
-                        params.append('lat', user.lat);
-                        params.append('long', user.long);
-                    }
-                    if (maxDist) {
-                        params.append('max_dist', maxDist);
-                    }
-
-                    // Pass customer tier so backend applies correct visibility rules:
-                    // Premium customers see listings immediately.
-                    // Free customers only see listings older than the TTL delay.
-                    if (user?.tier) {
-                        params.append('tier', user.tier);
-                    }
-
-                    const queryString = params.toString();
-                    if (queryString) url += `?${queryString}`;
-
-                    const response = await fetch(url);
+                    const response = await fetch('http://localhost:8000/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query, variables })
+                    });
+                    
                     if (response.ok) {
-                        const data = await response.json();
-                        setItems(data);
+                        const jsonResponse = await response.json();
+                        // Graphene changes snake_case 'merchant_name' to camelCase 'merchantName' automatically
+                        const formattedItems = (jsonResponse.data?.listings || []).map(item => ({
+                            ...item,
+                            merchant_name: item.merchantName,
+                            original_price: item.originalPrice
+                        }));
+                        setItems(formattedItems);
                     }
                 } catch (error) {
-                    console.error("Failed to fetch listings:", error);
+                    console.error("Failed to fetch listings via GraphQL:", error);
                 } finally {
                     setLoading(false);
                 }

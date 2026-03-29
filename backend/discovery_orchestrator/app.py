@@ -6,6 +6,7 @@ import math
 import json
 import pika
 from datetime import datetime, timezone
+import graphene
 
 app = Flask(__name__)
 CORS(app)
@@ -172,6 +173,66 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
 # Routes
 # ─────────────────────────────────────────
 
+def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
+    """Core logic shared by both REST and GraphQL endpoints to fetch and filter listings."""
+    inventory_resp = requests.get(INVENTORY_SERVICE_URL, timeout=5)
+    users_resp = requests.get(USER_SERVICE_URL, timeout=5)
+
+    if inventory_resp.status_code != 200:
+        raise Exception("Failed to fetch inventory")
+
+    items = inventory_resp.json()
+    users = users_resp.json() if users_resp.status_code == 200 else []
+
+    merchant_coords = {
+        str(u['id']): (u.get('lat'), u.get('long'))
+        for u in users if u.get('role') == 'merchant'
+    }
+
+    now = datetime.now(timezone.utc)
+    result = []
+
+    for item in items:
+        # ── Tier-based visibility ──────────────────────────────
+        if user_tier != 'premium':
+            created = item.get('created_at')
+            if created:
+                try:
+                    created_dt = datetime.fromisoformat(created.replace('Z', '+00:00'))
+                    if created_dt.tzinfo is None:
+                        created_dt = created_dt.replace(tzinfo=timezone.utc)
+                    age_seconds = (now - created_dt).total_seconds()
+                    if age_seconds < FREE_VISIBILITY_SECONDS:
+                        continue
+                except Exception as e:
+                    print(f"[DISCOVERY] Could not parse created_at: {e}")
+
+        # ── Filter out out-of-stock items ──────────────────────
+        qty = item.get('Quantity', item.get('quantity', 0))
+        if int(qty or 0) <= 0:
+            continue
+
+        # ── Distance calculation ───────────────────────────────
+        m_id = str(item.get('merchantID'))
+        m_lat, m_long = merchant_coords.get(m_id, (None, None))
+
+        dist = None
+        if user_lat is not None and user_long is not None and m_lat and m_long:
+            dist = haversine(user_lat, user_long, m_lat, m_long)
+
+        if max_dist is not None:
+            if dist is None or dist > max_dist:
+                continue
+
+        item_with_dist = item.copy()
+        item_with_dist['distance'] = round(dist, 2) if dist is not None else None
+        result.append(item_with_dist)
+
+    if user_lat is not None and user_long is not None:
+        result.sort(key=lambda x: (x['distance'] is None, x['distance']))
+
+    return result
+
 @app.route('/api/v1/discovery/listings', methods=['GET'])
 @app.route('/api/v1/inventory', methods=['GET'])
 def get_listings():
@@ -188,62 +249,7 @@ def get_listings():
     user_tier = request.args.get('tier', 'free').lower()  # 'premium' or 'free'
 
     try:
-        inventory_resp = requests.get(INVENTORY_SERVICE_URL, timeout=5)
-        users_resp = requests.get(USER_SERVICE_URL, timeout=5)
-
-        if inventory_resp.status_code != 200:
-            return jsonify({"error": "Failed to fetch inventory"}), 502
-
-        items = inventory_resp.json()
-        users = users_resp.json() if users_resp.status_code == 200 else []
-
-        merchant_coords = {
-            str(u['id']): (u.get('lat'), u.get('long'))
-            for u in users if u.get('role') == 'merchant'
-        }
-
-        now = datetime.now(timezone.utc)
-        result = []
-
-        for item in items:
-            # ── Tier-based visibility ──────────────────────────────
-            if user_tier != 'premium':
-                created = item.get('created_at')
-                if created:
-                    try:
-                        created_dt = datetime.fromisoformat(created.replace('Z', '+00:00'))
-                        if created_dt.tzinfo is None:
-                            created_dt = created_dt.replace(tzinfo=timezone.utc)
-                        age_seconds = (now - created_dt).total_seconds()
-                        if age_seconds < FREE_VISIBILITY_SECONDS:
-                            continue
-                    except Exception as e:
-                        print(f"[DISCOVERY] Could not parse created_at: {e}")
-
-            # ── Filter out out-of-stock items ──────────────────────
-            qty = item.get('Quantity', item.get('quantity', 0))
-            if int(qty or 0) <= 0:
-                continue
-
-            # ── Distance calculation ───────────────────────────────
-            m_id = str(item.get('merchantID'))
-            m_lat, m_long = merchant_coords.get(m_id, (None, None))  # ← ADD THIS BACK
-
-            dist = None
-            if user_lat is not None and user_long is not None and m_lat and m_long:
-                dist = haversine(user_lat, user_long, m_lat, m_long)
-
-            if max_dist is not None:
-                if dist is None or dist > max_dist:
-                    continue
-
-            item_with_dist = item.copy()
-            item_with_dist['distance'] = round(dist, 2) if dist is not None else None
-            result.append(item_with_dist)
-
-        if user_lat is not None and user_long is not None:
-            result.sort(key=lambda x: (x['distance'] is None, x['distance']))
-
+        result = _fetch_listings_data(user_lat, user_long, max_dist, user_tier)
         return jsonify(result), 200
 
     except Exception as e:
@@ -338,6 +344,62 @@ def create_listing():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────
+# GraphQL Integration (Scenario 2 BTL)
+# ─────────────────────────────────────────
+
+class ItemType(graphene.ObjectType):
+    itemID = graphene.Int(name="itemID")
+    name = graphene.String()
+    merchant_name = graphene.String(name="merchant_name")
+    status = graphene.String()
+    quantity = graphene.Int()
+    original_price = graphene.Float(name="original_price")
+    price = graphene.Float()
+    distance = graphene.Float()
+
+class Query(graphene.ObjectType):
+    listings = graphene.List(
+        ItemType,
+        lat=graphene.Float(),
+        long=graphene.Float(),
+        max_dist=graphene.Float(),
+        tier=graphene.String()
+    )
+
+    def resolve_listings(self, info, lat=None, long=None, max_dist=None, tier='free'):
+        try:
+            return _fetch_listings_data(lat, long, max_dist, tier.lower())
+        except Exception as e:
+            print(f"[GRAPHQL] Error resolving listings: {e}")
+            return []
+
+schema = graphene.Schema(query=Query)
+
+@app.route('/graphql', methods=['POST'])
+def graphql_endpoint():
+    """
+    GraphQL endpoint for React frontend.
+    Allows frontend to specify exactly which fields it wants, eliminating REST over-fetching.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"errors": ["No JSON body provided"]}), 400
+        
+    query = data.get('query')
+    variables = data.get('variables')
+    
+    result = schema.execute(query, variable_values=variables)
+    
+    response_data = {}
+    if result.errors:
+        response_data['errors'] = [str(e) for e in result.errors]
+    if result.data:
+        response_data['data'] = result.data
+        
+    return jsonify(response_data), 200 if not result.errors else 400
 
 
 if __name__ == '__main__':
