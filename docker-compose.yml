@@ -101,11 +101,14 @@ services:
       - payment-ms
       - order-ms
       - rabbitmq
+      - redis
     environment:
       - INVENTORY_SERVICE_URL=https://personal-w8na3xfs.outsystemscloud.com/InventoryMS/rest/InventoryAPI/items
       - PAYMENT_SERVICE_URL=http://payment-ms:5003/api/v1/payments/charge
       - ORDER_SERVICE_URL=http://order-ms:5002/api/v1/orders
       - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./backend/checkout_orchestrator:/app
     command: gunicorn --bind 0.0.0.0:5011 --reload --access-logfile - app:app

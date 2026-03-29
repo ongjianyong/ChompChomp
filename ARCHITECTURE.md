@@ -40,9 +40,12 @@ Docker is used to package each microservice and infrastructure component into it
 - **Role:** Used for distributed locking and temporary state management (caching).
 - **How it works:** When a user clicks "Buy", we use Redis to place a "lock" on that specific item. This guarantees no two people can buy the exact same physical limited-stock item at the exact same millisecond. It also powers the 1-minute reservation timer. If the timer expires in Redis, a background worker sees this and returns the stock to inventory.
 
-### 4. RabbitMQ (Message Broker)
-- **Role:** Handles asynchronous, background communication between microservices using events.
-- **How it works:** Instead of making microservices wait for each other, they "publish" events to RabbitMQ. For example, when a listing is created, the orchestrator publishes an `alert.send` event. RabbitMQ holds this message and routes it to the `alert-ms` to send an SMS.
+### 3. RabbitMQ (Message Broker)
+- **Role:** Handles asynchronous, background communication and complex workflow delays.
+- **How it works (Advanced Pattern):** We use a **TTL (Time To Live) + Dead Letter Queue** pattern for tiered notifications. 
+  - Listings for "Premium" users are sent to an immediate queue.
+  - Listings for "Free" users are sent to a "Waiting Room" queue with a 1-minute TTL.
+  - When the TTL expires, RabbitMQ automatically moves the message to a **Dead Letter Queue (DLQ)**, which the `alert-ms` then consumes. This ensures reliable, decentralized delays without blocking Python threads.
 
 ## Service-Oriented Architecture (SOA)
 ChompChomp follows SOA principles by distinguishing between **Atomic Services** (which manage core entity data) and **Composite (Orchestrator) Services** (which manage business workflows).
@@ -67,7 +70,8 @@ These services manage complex business processes by coordinating multiple atomic
 - **Discovery Orchestrator**: 
   - Composes `user-ms` and `inventory-ms` data.
   - Handles external geocoding (OneMap SG).
-  - Calculates distances and handles triggered notifications for new listings.
+  - **Tier-based Visibility:** Filters listings so "Free" users cannot see or buy items for the first 60 seconds of their existence.
+  - **Tiered Notifications:** Manages the routing of new listing events into RabbitMQ TTL/Immediate queues based on user subscription level.
 - **Checkout Orchestrator**:
   - Manages the end-to-end reservation and payment lifecycle.
   - Handles the 1-minute stock reservation timeout logic.
