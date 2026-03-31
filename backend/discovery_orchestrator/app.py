@@ -126,7 +126,7 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
             routing_key='notification.free.dlq'
         )
 
-        msg_body = f"Flash Sale! {item_name} listed for ${item_price}! Self-pickup only."
+        msg_body = f"Flash Sale! {item_name} listed for ${item_price}!"
 
         # Publish to Premium Customer Queue — consumed immediately
         premium_count = 0
@@ -276,7 +276,14 @@ def proxy_inventory_management(item_id):
             resp = requests.put(url, json=request.json, timeout=5)
         else:
             resp = requests.delete(url, timeout=5)
-        return jsonify(resp.json()), resp.status_code
+            
+        # Handle cases where OutSystems returns text/plain (like success messages)
+        try:
+            return jsonify(resp.json()), resp.status_code
+        except Exception:
+            # If it's not JSON, return a standard message object wrapping the text response
+            return jsonify({"message": resp.text}), resp.status_code
+            
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -311,8 +318,14 @@ def create_listing():
         inventory_resp = requests.post(INVENTORY_SERVICE_URL, json=data, timeout=5)
 
         if inventory_resp.status_code == 201:
-            item_data = inventory_resp.json()
-            item_id = item_data.get('itemID')
+            try:
+                item_data = inventory_resp.json()
+                item_id = item_data.get('itemID')
+            except Exception:
+                # Fallback: OutSystems returns the new item's ID as raw text/plain
+                raw_text = inventory_resp.text.strip()
+                item_id = int(raw_text) if raw_text.isdigit() else raw_text
+                item_data = {"itemID": item_id, "message": "Listing successfully created on Inventory MS"}
 
             # 4. Scenario 1: Fetch all CUSTOMERS split by tier and publish tiered notifications
             # Note: merchants are excluded — they don't receive listing notifications
@@ -376,7 +389,7 @@ class Query(graphene.ObjectType):
             print(f"[GRAPHQL] Error resolving listings: {e}")
             return []
 
-schema = graphene.Schema(query=Query)
+schema = graphene.Schema(query=Query, auto_camelcase=False)
 
 @app.route('/graphql', methods=['POST'])
 def graphql_endpoint():

@@ -26,14 +26,14 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     // --- GRAPHQL (Scenario 2 BTL) ---
                     // Eliminating REST over-fetching by specifying exact fields needed for the UI
                     const query = `
-                        query GetListings($lat: Float, $long: Float, $maxDist: Float, $tier: String) {
-                            listings(lat: $lat, long: $long, maxDist: $maxDist, tier: $tier) {
+                        query GetListings($lat: Float, $long: Float, $max_dist: Float, $tier: String) {
+                            listings(lat: $lat, long: $long, max_dist: $max_dist, tier: $tier) {
                                 itemID
                                 name
-                                merchantName
+                                merchant_name
                                 status
                                 quantity
-                                originalPrice
+                                original_price
                                 price
                                 distance
                             }
@@ -43,7 +43,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     const variables = {
                         lat: user?.lat ? parseFloat(user.lat) : null,
                         long: user?.long ? parseFloat(user.long) : null,
-                        maxDist: maxDist ? parseFloat(maxDist) : null,
+                        max_dist: maxDist ? parseFloat(maxDist) : null,
                         tier: user?.tier || 'free'
                     };
 
@@ -57,13 +57,8 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     
                     if (response.ok) {
                         const jsonResponse = await response.json();
-                        // Graphene changes snake_case 'merchant_name' to camelCase 'merchantName' automatically
-                        const formattedItems = (jsonResponse.data?.listings || []).map(item => ({
-                            ...item,
-                            merchant_name: item.merchantName,
-                            original_price: item.originalPrice
-                        }));
-                        setItems(formattedItems);
+                        // Fields are already in snake_case to match the rest of the app
+                        setItems(jsonResponse.data?.listings || []);
                     }
                 } catch (error) {
                     console.error("Failed to fetch listings via GraphQL:", error);

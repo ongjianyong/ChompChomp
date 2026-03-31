@@ -167,7 +167,7 @@ def consume_background():
                 queue='free_notification_queue',
                 durable=True,
                 arguments={
-                    'x-message-ttl': 600000,
+                    'x-message-ttl': 60000,  # Must match FREE_QUEUE_TTL_MS in discovery_orchestrator
                     'x-dead-letter-exchange': 'chomp_events',
                     'x-dead-letter-routing-key': 'notification.free.dlq'
                 }
@@ -232,9 +232,11 @@ def trigger_alert():
 # Startup
 # ─────────────────────────────────────────
 
-if __name__ == '__main__':
-    # Start RabbitMQ consumer in background thread
-    threading.Thread(target=consume_background, daemon=True).start()
+# Start RabbitMQ consumer in background thread
+# This runs at module import time, which works for both 'python app.py' and 'gunicorn app:app'
+_consumer_thread = threading.Thread(target=consume_background, daemon=True)
+_consumer_thread.start()
 
+if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5004))
     app.run(host='0.0.0.0', port=port)
