@@ -60,7 +60,7 @@ def publish_event(event_type, payload):
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
         channel = connection.channel()
-        channel.exchange_declare(exchange='chomp_events', exchange_type='topic')
+        channel.exchange_declare(exchange='chomp_events', exchange_type='topic', durable=True)
         channel.basic_publish(
             exchange='chomp_events',
             routing_key=event_type,

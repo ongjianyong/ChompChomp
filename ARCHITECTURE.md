@@ -20,11 +20,15 @@ To run the entire system locally:
 3. **Access the App:** Open your browser and go to `http://localhost:5173`. 
    *Note: All backend API calls from the frontend go to `http://localhost:8000` (Kong API Gateway).*
 
-## The Role of Docker
-Docker is used to package each microservice and infrastructure component into its own isolated environment (called a "container"). 
-- **Dependencies:** You don't need to install Python, Postgres, Redis, or RabbitMQ on your actual computer. Docker installs and runs them inside the containers using the `Dockerfile` and `requirements.txt`.
-- **Consistency:** It ensures that the app runs exactly the same way on your laptop as it does on a group member's laptop, or the professor's machine.
-- **Docker Compose:** The `docker-compose.yml` file acts as the orchestrator. It tells Docker how to start all the containers together and connects them to a shared internal network so they can talk to each other.
+## The 4-Layer Service-Oriented Architecture (SOA)
+ChompChomp follows a strict **4-Layer SOA** model to ensure modularity and scalability:
+
+| Layer | Components | Role |
+|---|---|---|
+| **1. UI Layer** | React, CSS, Vite | The entry point for users (Customers & Merchants). |
+| **2. Composite Layer** | Discovery & Checkout Orchestrators | "The Verbs." They coordinate multiple services to fulfill a business process. |
+| **3. Atomic Layer** | User MS, Order MS, Inventory MS | "The Nouns." They own a single data entity and its exclusive database. |
+| **4. Wrapper Layer** | Payment MS, Alert MS | "The Adapters." They wrap external 3rd-party APIs (Stripe, Twilio). |
 
 ## Core Infrastructure Components
 
@@ -37,45 +41,46 @@ Docker is used to package each microservice and infrastructure component into it
 - **How it works:** Instead of one massive database, each microservice has its own isolated logical database within Postgres (e.g., `user_db`, `inventory_db`, `order_db`). This ensures that microservices do not tightly couple their data.
 
 ### 3. Redis (In-Memory Data Store)
-- **Role:** Used for distributed locking and temporary state management (caching).
-- **How it works:** When a user clicks "Buy", we use Redis to place a "lock" on that specific item. This guarantees no two people can buy the exact same physical limited-stock item at the exact same millisecond. It also powers the 1-minute reservation timer. If the timer expires in Redis, a background worker sees this and returns the stock to inventory.
+- **Role:** Used for distributed locking and temporary state management (Session Caching).
+- **How it works:** 
+  - **Scenario 2 Concurrent Lock:** We use Redis `SETNX` to place a "distributed lock" on an item. This prevents race conditions where two users hit the "Reserve" button simultaneously.
+  - **Scenario 3 Timeout Cache:** It powers the 60-second reservation timer. If the user doesn't pay, a background worker sees the expired session and releases the stock.
 
-### 3. RabbitMQ (Message Broker)
+### 4. RabbitMQ (Message Broker)
 - **Role:** Handles asynchronous, background communication and complex workflow delays.
 - **How it works (Advanced Pattern):** We use a **TTL (Time To Live) + Dead Letter Queue** pattern for tiered notifications. 
   - Listings for "Premium" users are sent to an immediate queue.
-  - Listings for "Free" users are sent to a "Waiting Room" queue with a 1-minute TTL.
-  - When the TTL expires, RabbitMQ automatically moves the message to a **Dead Letter Queue (DLQ)**, which the `alert-ms` then consumes. This ensures reliable, decentralized delays without blocking Python threads.
+  - Listings for "Free" users are sent to a "Waiting Room" queue with a 60-second TTL.
+  - When the TTL expires, RabbitMQ automatically moves the message to a **DLQ**, which the `alert-ms` then consumes.
 
-## Service-Oriented Architecture (SOA)
-ChompChomp follows SOA principles by distinguishing between **Atomic Services** (which manage core entity data) and **Composite (Orchestrator) Services** (which manage business workflows).
+---
 
-### 1. Atomic Services ("The Nouns")
-These services are highly specialized, decoupled, and do not call other local services directly. They provide the fundamental building blocks of the system.
+## Service Breakdown
 
-- **`user-ms`**: Pure CRUD for all user accounts, including both **Customers** and **Merchants**.
-- **`inventory-ms`**: Pure CRUD for food box listings and stock management.
-- **`payment-ms`**: Interface for Stripe payment processing.
-- **`alert-ms`**: A generic SMS gateway (Twilio/Mock).
-- **`order-ms`**: Manages the persistence of order history.
+### 1. Atomic Services
+These services manage core entity data and have **exclusive ownership** of their databases.
 
-### 3. External Services
-- **OneMap SG API**: Used for geocoding Singapore postal codes into coordinates (Latitude/Longitude).
-- **Stripe API**: Used for secure payment processing (interfaced via `payment-ms`).
-- **Twilio API**: Used for sending SMS alerts (interfaced via `alert-ms`).
+- **User MS**: Manages all accounts (Customers & Merchants). Owns `user_db` (Postgres).
+- **Order MS**: Manages persistent order history. Owns `order_db` (Postgres).
+- **Inventory MS (OutSystems Cloud)**: Manages food listings and atomic stock updates. Hosted on the OutSystems platform.
 
-### 4. Composite Orchestrators ("The Verbs")
-These services manage complex business processes by coordinating multiple atomic services. The frontend communicates primarily with these orchestrators.
+### 2. Wrapper Services
+Thin adapters that expose external APIs as internal microservices.
+
+- **Payment MS**: Wraps the **Stripe API** for secure payments.
+- **Alert MS**: Wraps the **Twilio API** for SMS notifications. It is a RabbitMQ consumer.
+
+### 3. Composite Orchestrators
+The "Brains" of the system. They coordinate atomic and wrapper services.
 
 - **Discovery Orchestrator**: 
-  - Composes `user-ms` and `inventory-ms` data.
-  - Handles external geocoding (OneMap SG).
-  - **Tier-based Visibility:** Filters listings so "Free" users cannot see or buy items for the first 60 seconds of their existence.
-  - **Tiered Notifications:** Manages the routing of new listing events into RabbitMQ TTL/Immediate queues based on user subscription level.
+  - **Geocoding:** Interacts with the **OneMap SG API**.
+  - **Tiered Access:** Manages 60-second visibility delays and RabbitMQ tiered notification routing.
+  - **GraphQL:** Provides a single, optimized endpoint for the marketplace UI.
 - **Checkout Orchestrator**:
-  - Manages the end-to-end reservation and payment lifecycle.
-  - Handles the 1-minute stock reservation timeout logic.
-  - Coordinates `inventory-ms`, `order-ms`, and `payment-ms`.
+  - Manages the race-condition defense layer (Redis Lock).
+  - Handles the 60-second payment deadline and automated stock release.
+  - Coordinates Inventory, Payment, and Order microservices.
 
 ## Core Infrastructure Components
 

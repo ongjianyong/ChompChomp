@@ -120,6 +120,24 @@ def process_free_dlq(ch, method, properties, body):
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
+def process_direct_alert(ch, method, properties, body):
+    """
+    Consume from Direct Alert Queue.
+    Used for immediate, non-tiered system alerts (e.g., payment success, stock re-availability).
+    """
+    try:
+        data = json.loads(body)
+        phone = data.get('phone')
+        message = data.get('message')
+        
+        print(f"[ALERT-MS] ✉️  Direct system alert → {phone}")
+        send_real_sms(phone, message)
+        
+    except Exception as e:
+        print(f"[ALERT-MS] ❌ Error processing direct alert: {e}")
+    finally:
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
 
 # ─────────────────────────────────────────
 # RabbitMQ Background Consumer
@@ -190,6 +208,17 @@ def consume_background():
                 routing_key='notification.free.dlq'
             )
 
+            # ── Direct Alert Queue ─────────────────────────────────
+            channel.queue_declare(
+                queue='direct_alert_queue',
+                durable=True
+            )
+            channel.queue_bind(
+                exchange='chomp_events',
+                queue='direct_alert_queue',
+                routing_key='alert.send'
+            )
+
             # Register consumers
             channel.basic_consume(
                 queue='premium_notification_queue',
@@ -198,6 +227,10 @@ def consume_background():
             channel.basic_consume(
                 queue='free_notification_dlq',
                 on_message_callback=process_free_dlq
+            )
+            channel.basic_consume(
+                queue='direct_alert_queue',
+                on_message_callback=process_direct_alert
             )
 
             print('[ALERT-MS] ✅ Listening on premium_notification_queue and free_notification_dlq...')
