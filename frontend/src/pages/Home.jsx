@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import Card from '../components/Card';
 import BoxDetailModal from '../components/BoxDetailModal';
 import CheckoutModal from '../components/CheckoutModal';
 import MyOrdersList from '../components/MyOrdersList';
@@ -24,11 +23,11 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                 setLoading(true);
                 try {
                     // --- GRAPHQL (Scenario 2 BTL) ---
-                    // Eliminating REST over-fetching by specifying exact fields needed for the UI
                     const query = `
                         query GetListings($lat: Float, $long: Float, $max_dist: Float, $tier: String) {
                             listings(lat: $lat, long: $long, max_dist: $max_dist, tier: $tier) {
                                 itemID
+                                merchantID
                                 name
                                 merchant_name
                                 status
@@ -57,7 +56,6 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     
                     if (response.ok) {
                         const jsonResponse = await response.json();
-                        // Fields are already in snake_case to match the rest of the app
                         setItems(jsonResponse.data?.listings || []);
                     }
                 } catch (error) {
@@ -79,15 +77,15 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
             {/* Hero Section - Only for Guests */}
             {isGuest && (
                 <section className="pt-24 pb-16 lg:pt-36 lg:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
-                    <h1 className="text-5xl md:text-7xl font-display font-medium tracking-tight text-black mb-6">
+                    <h1 className="text-5xl md:text-7xl font-display font-medium tracking-tight text-black mb-6 uppercase">
                         Rescue great food.<br />
                         Pay less. Waste nothing.
                     </h1>
-                    <p className="text-gray-500 text-lg max-w-xl mb-10 font-sans font-light">
-                        Premium surplus from top restaurants &mdash; claimed before it goes to waste.
+                    <p className="text-gray-500 text-lg max-w-xl mb-10 font-sans font-light uppercase tracking-widest text-xs">
+                        Premium surplus from top restaurants — claimed before it goes to waste.
                     </p>
                     <div className="flex justify-center">
-                        <Button onClick={onOpenLogin} variant="primary" className="bg-black text-white hover:bg-gray-800 px-12 py-5 text-xl rounded-none">
+                        <Button onClick={onOpenLogin} variant="primary" className="bg-black text-white hover:bg-gray-800 px-12 py-5 text-xl rounded-none uppercase tracking-widest font-bold">
                             Shop Now
                         </Button>
                     </div>
@@ -134,32 +132,32 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                         ? 'bg-amber-50 border-amber-400 text-amber-600'
                                         : 'bg-gray-50 border-gray-300 text-gray-500'
                                 }`}>
-                                    {user?.tier === 'premium' ? '⚡ Premium — Early Access' : 'Free — Delayed Access'}
+                                    {user?.tier === 'premium' ? 'Premium — Early Access' : 'Free — Delayed Access'}
                                 </div>
                             )}
 
                             {/* Distance Filter */}
                             {!isGuest && user?.lat && (
-                                <div className="flex-grow flex justify-end items-center space-x-3">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Within</span>
+                                <div className="flex-grow flex-shrink-0 flex justify-end items-center space-x-3">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">WITHIN</span>
                                     <select
                                         value={maxDist || ''}
                                         onChange={(e) => setMaxDist(e.target.value ? Number(e.target.value) : null)}
                                         className="bg-transparent border-b border-black text-xs font-bold uppercase tracking-widest py-1 outline-none"
                                     >
-                                        <option value="">Any Distance</option>
-                                        <option value="2">&lt; 2km</option>
-                                        <option value="5">&lt; 5km</option>
-                                        <option value="10">&lt; 10km</option>
+                                        <option value="">ANY DISTANCE</option>
+                                        <option value="2">2KM</option>
+                                        <option value="5">5KM</option>
+                                        <option value="10">10KM</option>
                                     </select>
                                 </div>
                             )}
                         </div>
 
                         {loading ? (
-                            <div className="text-center py-20 grayscale opacity-50">Loading current listings...</div>
+                            <div className="text-center py-20 grayscale opacity-50 uppercase tracking-widest text-sm">Loading current listings...</div>
                         ) : items.length === 0 ? (
-                            <div className="border border-gray-100 py-32 text-center text-gray-400 uppercase tracking-widest text-sm">
+                            <div className="border border-gray-100 py-32 text-center text-gray-400 uppercase tracking-widest text-sm px-4">
                                 {user?.tier !== 'premium'
                                     ? 'No listings available yet. Premium members get early access — upgrade to see listings first.'
                                     : 'No active listings right now. Check back soon.'}
@@ -167,38 +165,40 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {items.map((product) => (
-                                    <div key={product.itemID} className="group cursor-pointer flex flex-col h-full border border-gray-200 hover:border-black transition-colors">
-                                        <Card className="bg-gray-100 aspect-square rounded-none flex items-center justify-center relative overflow-hidden">
-                                            <img
-                                                src={`https://images.unsplash.com/photo-1550617931-e17a7b70dce2?q=80&w=400&h=400`}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover grayscale transition-transform duration-700 group-hover:scale-105 group-hover:grayscale-0"
-                                            />
-                                            <div className="absolute top-4 right-4 bg-white px-3 py-1 text-xs font-bold text-black border border-black rounded-none uppercase tracking-widest shadow-sm">
-                                                {product.merchant_name}
+                                    <div key={product.itemID} className="group cursor-pointer flex flex-col h-full border border-black hover:bg-gray-50 transition-all duration-300">
+                                        <div className="p-8 border-b border-black bg-white flex flex-col justify-between h-40">
+                                            <div>
+                                                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">{product.merchant_name}</div>
+                                                <h3 className="text-2xl font-display uppercase tracking-tight text-black line-clamp-2 leading-none">{product.name}</h3>
                                             </div>
-                                            <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur px-4 py-2 text-xs font-bold text-white border border-white/20 rounded-none flex justify-between items-center">
-                                                <span className="uppercase tracking-widest text-red-400">{product.status === 'available' ? 'Available' : 'Limited'}</span>
-                                                <span>{product.quantity} LEFT</span>
+                                            <div className="flex justify-between items-end">
+                                                <span className={`text-[10px] font-bold uppercase tracking-widest inline-block border px-2 py-0.5 ${product.quantity > 0 ? 'border-black text-black' : 'border-red-600 text-red-600'}`}>
+                                                    {product.quantity > 0 ? 'STATUS: LIVE' : 'STATUS: SOLD OUT'}
+                                                </span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                                    QTY: {product.quantity} AVAILABLE
+                                                </span>
                                             </div>
-                                        </Card>
-                                        <div className="p-6 flex flex-col flex-grow bg-white">
-                                            <h3 className="text-xl font-medium text-black mb-1">{product.name}</h3>
-                                            <p className="text-gray-500 text-sm mb-4">from {product.merchant_name}</p>
-
-                                            <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                                        </div>
+                                        <div className="p-8 flex flex-col flex-grow bg-white">
+                                            <div className="flex items-end justify-between">
                                                 <div className="flex flex-col">
-                                                    <span className="text-gray-400 line-through text-xs">${product.original_price?.toFixed(2) || '0.00'}</span>
-                                                    <span className="text-black font-bold text-lg">${product.price?.toFixed(2) || '0.00'}</span>
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">PRICE DROP</span>
+                                                    <div className="flex items-baseline space-x-2">
+                                                        <span className="text-2xl font-bold text-black leading-none">${product.price?.toFixed(2) || '0.00'}</span>
+                                                        <span className="text-gray-400 line-through text-xs font-medium tracking-tighter">${product.original_price?.toFixed(2) || '0.00'}</span>
+                                                    </div>
                                                     {product.distance !== undefined && product.distance !== null && (
-                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                                            📍 {product.distance}km away
-                                                        </span>
+                                                        <div className="mt-4 pt-4 border-t border-gray-100">
+                                                            <span className="text-[10px] font-bold text-black uppercase tracking-[0.2em]">
+                                                                DISTANCE: {product.distance}KM
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                                 <Button
                                                     variant="primary"
-                                                    className="bg-black text-white hover:bg-gray-800 rounded-none px-6 py-2 uppercase tracking-widest text-xs font-bold"
+                                                    className="bg-black text-white hover:bg-gray-800 rounded-none px-8 py-3 uppercase tracking-widest text-[10px] font-bold"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         if (!user) {
@@ -206,7 +206,6 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                                             return;
                                                         }
 
-                                                        // SESSION PERSISTENCE: Check for existing reservation
                                                         const savedRes = localStorage.getItem(`res_${user.email}_${product.itemID}`);
                                                         if (savedRes) {
                                                             try {
@@ -244,7 +243,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     <>
                         <div className="mb-16">
                             <h2 className="text-4xl md:text-5xl font-display uppercase tracking-tighter mb-4">Active & Past Orders</h2>
-                            <p className="text-gray-500 text-sm max-w-sm">Track your current rescues and view your contribution history.</p>
+                            <p className="text-gray-500 text-sm max-w-sm uppercase tracking-widest text-[10px] font-bold">Track your current rescues and view your contribution history.</p>
                         </div>
                         <MyOrdersList user={user} onViewOrder={onViewOrderStatus} />
                     </>

@@ -66,8 +66,8 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
             <div className="bg-white w-full max-w-md border border-amber-400 animate-in fade-in zoom-in duration-300 shadow-premium">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-amber-50">
                     <div className="flex flex-col">
-                        <h2 className="text-xl font-display uppercase tracking-tight text-amber-600">Upgrade to Premium</h2>
-                        <span className="text-[10px] text-amber-500 uppercase tracking-widest font-bold">One-Time Payment</span>
+                        <h2 className="text-xl font-display uppercase tracking-tight text-amber-600">UPGRADE TO PREMIUM</h2>
+                        <span className="text-[10px] text-amber-500 uppercase tracking-widest font-bold">ONE-TIME PAYMENT</span>
                     </div>
                     <button onClick={onClose} className="text-amber-400 hover:text-amber-600">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,22 +78,22 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
 
                 <div className="p-8 space-y-6">
                     <div className="bg-amber-50 border border-amber-200 p-4 space-y-2">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-amber-700">Premium Benefits</h3>
+                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-amber-700">PREMIUM BENEFITS</h3>
                         <ul className="text-sm text-amber-700 space-y-2">
                             <li className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                Instant SMS notifications for new listings
+                                INSTANT SMS NOTIFICATIONS FOR NEW LISTINGS
                             </li>
-                            <li className="flex items-center gap-2">
+                            <li className="flex items-center gap-2 uppercase text-[10px] font-medium tracking-tight">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                Priority access to high-demand boxes
+                                PRIORITY ACCESS TO HIGH-DEMAND BOXES
                             </li>
 
                         </ul>
                     </div>
 
-                    <div className="bg-gray-50 p-4 border border-gray-100 flex justify-between font-bold">
-                        <span>Lifetime Access</span>
+                    <div className="bg-gray-50 p-4 border border-gray-100 flex justify-between font-bold text-[10px] uppercase tracking-widest">
+                        <span>LIFETIME ACCESS</span>
                         <span>$5.00</span>
                     </div>
 
@@ -149,10 +149,10 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
                             {isProcessing ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    <span>Processing...</span>
+                                    <span>PROCESSING...</span>
                                 </>
                             ) : (
-                                <span>Pay $5.00</span>
+                                <span>PAY $5.00</span>
                             )}
                         </Button>
                     </form>

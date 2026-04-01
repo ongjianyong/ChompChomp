@@ -365,6 +365,7 @@ def create_listing():
 
 class ItemType(graphene.ObjectType):
     itemID = graphene.Int(name="itemID")
+    merchantID = graphene.String(name="merchantID") # Required for checkout persistence
     name = graphene.String()
     merchant_name = graphene.String(name="merchant_name")
     status = graphene.String()

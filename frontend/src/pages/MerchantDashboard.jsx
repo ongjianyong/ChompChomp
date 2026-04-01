@@ -178,7 +178,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                         onClick={() => isListing ? handleCancelForm() : setIsListing(true)}
                         className="bg-black text-white hover:bg-gray-800 rounded-none px-8 py-3 uppercase tracking-widest text-xs font-bold transition-all"
                     >
-                        {isListing ? 'Cancel' : '+ New Box Listing'}
+                        {isListing ? 'CANCEL' : '+ NEW BOX LISTING'}
                     </Button>
                 </div>
 
@@ -266,14 +266,9 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                 {items.map((item, index) => (
                                     <tr key={item.itemID || index} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-8 py-6 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-12 w-12 bg-gray-100 border border-gray-200 overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
-                                                    <img src={`https://images.unsplash.com/photo-1550617931-e17a7b70dce2?q=80&w=100&h=100`} alt="" />
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-black uppercase tracking-tight">{item.name}</div>
-                                                    <div className="text-[10px] text-gray-400 uppercase tracking-widest">ID: {item.itemID}</div>
-                                                </div>
+                                            <div className="flex flex-col">
+                                                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-1">ITEM IDENTIFIER: {item.itemID}</div>
+                                                <div className="text-sm font-bold text-black uppercase tracking-tight">{item.name}</div>
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 whitespace-nowrap">
@@ -288,9 +283,9 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                                 {item.quantity > 0 ? 'Live' : 'Sold Out'}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-6 whitespace-nowrap text-right text-xs font-bold">
-                                            <button onClick={() => handleEditListing(item)} className="text-gray-300 hover:text-black transition-colors uppercase tracking-widest mr-4">Edit</button>
-                                            <button onClick={() => confirmRemoveListing(item)} className="text-gray-300 hover:text-red-600 transition-colors uppercase tracking-widest">Remove</button>
+                                        <td className="px-8 py-6 whitespace-nowrap text-right text-[10px] font-bold">
+                                            <button onClick={() => handleEditListing(item)} className="text-gray-300 hover:text-black transition-colors uppercase tracking-widest mr-6">EDIT</button>
+                                            <button onClick={() => confirmRemoveListing(item)} className="text-gray-300 hover:text-red-600 transition-colors uppercase tracking-widest">REMOVE</button>
                                         </td>
                                     </tr>
                                 ))}

@@ -20,9 +20,9 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                         {currentView === 'common' && (
                             <button
                                 onClick={onOpenLogin}
-                                className="font-medium text-sm text-white bg-black px-5 py-2 hover:bg-gray-800 transition-colors uppercase tracking-wider"
+                                className="font-bold text-xs text-white bg-black px-6 py-2.5 hover:bg-gray-800 transition-colors uppercase tracking-[0.2em]"
                             >
-                                Login
+                                LOGIN
                             </button>
                         )}
 
@@ -33,15 +33,15 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                                     <button
                                         onClick={onGoProfile}
                                         className="hover:underline cursor-pointer"
-                                        title="Edit Profile"
+                                        title="EDIT PROFILE"
                                     >
-                                        {user.name}
+                                        {user.name.toUpperCase()}
                                     </button>
                                 </span>
                                 {user.tier === 'premium' ? (
                                     <span 
                                         className="font-bold text-[10px] px-3 py-1.5 uppercase tracking-widest border border-amber-400 text-amber-600 bg-amber-50 cursor-default"
-                                        title="You are a Premium Member"
+                                        title="YOU ARE A PREMIUM MEMBER"
                                     >
                                         PREMIUM
                                     </span>
@@ -49,12 +49,12 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                                     <button
                                         onClick={() => setIsUpgradeModalOpen(true)}
                                         className="font-bold text-[10px] px-3 py-1.5 uppercase tracking-widest border border-gray-300 text-gray-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-400 transition-colors focus:outline-none"
-                                        title="Upgrade to Premium"
+                                        title="UPGRADE TO PREMIUM"
                                     >
                                         GET PREMIUM
                                     </button>
                                 )}
-                                <button onClick={onLogout} className="font-medium text-sm text-gray-500 hover:text-black transition-colors">Logout</button>
+                                <button onClick={onLogout} className="font-bold text-[10px] text-gray-400 hover:text-black transition-colors uppercase tracking-widest">LOGOUT</button>
                             </div>
                         )}
 
@@ -63,11 +63,11 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                                 <button
                                     onClick={onGoProfile}
                                     className="font-medium text-sm text-black border-b-2 border-transparent hover:border-black cursor-pointer pb-1 uppercase tracking-widest transition-colors"
-                                    title="Edit Profile"
+                                    title="EDIT PROFILE"
                                 >
-                                    {user.name}
+                                    {user.name.toUpperCase()}
                                 </button>
-                                <button onClick={onLogout} className="font-medium text-sm text-white bg-black hover:bg-gray-800 transition-colors px-4 py-2 uppercase tracking-wider">Logout</button>
+                                <button onClick={onLogout} className="font-bold text-[10px] text-white bg-black hover:bg-gray-800 transition-colors px-6 py-2.5 uppercase tracking-[0.2em]">LOGOUT</button>
                             </div>
                         )}
                     </div>

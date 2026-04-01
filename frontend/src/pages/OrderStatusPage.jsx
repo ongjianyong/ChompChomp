@@ -8,16 +8,25 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
 
     useEffect(() => {
         const fetchOrder = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error("No authorization token found. Please log in again.");
+                return;
+            }
             try {
                 const response = await fetch(`http://localhost:8000/api/v1/orders/${orderId}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
                     const data = await response.json();
                     setOrder(data);
+                } else if (response.status === 401) {
+                    console.error("401 Unauthorized: Your session may have expired. Please log in again.");
+                } else {
+                    console.error(`Failed to fetch order status. Status: ${response.status}`);
                 }
             } catch (error) {
-                console.error("Failed to fetch order status:", error);
+                console.error("Network error while fetching order status:", error);
             }
         };
 
@@ -53,7 +62,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Order Tracking &bull; {order.merchant_name || 'Self-Pickup'}</p>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">ORDER TRACKING / {order.merchant_name?.toUpperCase() || 'SELF-PICKUP'}</p>
                             <h1 className="text-4xl font-display uppercase tracking-tight">#{String(orderId)}</h1>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -96,38 +105,37 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-display uppercase tracking-tight">Order Complete</h3>
-                                    <p className="text-sm text-gray-500 mt-2">Thank you for rescuing food and reducing waste today!</p>
+                                    <h3 className="text-2xl font-display uppercase tracking-tight">ORDER COMPLETE</h3>
+                                    <p className="text-sm text-gray-500 mt-2">THANK YOU FOR RESCUING FOOD AND REDUCING WASTE TODAY!</p>
                                 </div>
                                 <div className="p-6 bg-white border border-gray-200 mt-6 inline-block">
-                                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Receipt Info</div>
-                                    <div className="text-sm font-bold text-black uppercase tracking-widest mb-1">Total Paid: ${order.total_paid?.toFixed(2)}</div>
-                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest">Paid via Card</div>
-                                </div>
-                                <div>
-                                    <Button variant="secondary" onClick={onGoHome} className="mt-8 uppercase tracking-widest font-bold">Return to Map</Button>
+                                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">RECEIPT INFO</div>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        {order.quantity || 1} {order.quantity > 1 ? 'UNITS' : 'UNIT'} / TOTAL: ${order.total_paid?.toFixed(2)}
+                                    </p>
+                                    <Button variant="secondary" onClick={onGoHome} className="mt-8 uppercase tracking-widest font-bold">RETURN TO MAP</Button>
                                 </div>
                             </div>
                         ) : order.status === 'ready_for_pickup' ? (
                             <div className="text-center space-y-8">
-                                <div className="text-4xl">🛍️</div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-black border border-black inline-block px-4 py-2">COLLECTION READY</div>
                                 <div>
-                                    <h3 className="text-2xl font-display uppercase tracking-tight">Your Order is Ready</h3>
-                                    <p className="text-sm text-gray-500 mt-2">Show the code below to the merchant to collect your rescue.</p>
+                                    <h3 className="text-2xl font-display uppercase tracking-tight">YOUR ORDER IS READY</h3>
+                                    <p className="text-sm text-gray-500 mt-2">SHOW THE CODE BELOW TO THE MERCHANT TO COLLECT YOUR RESCUE.</p>
                                 </div>
                                 <div className="p-6 bg-white border-2 border-dashed border-black font-mono text-xl inline-block uppercase tracking-widest">
                                     CHOMP-{String(orderId).slice(-4)}
                                 </div>
                                 <div>
-                                    <Button variant="secondary" onClick={onGoHome} className="mt-4 uppercase tracking-widest font-bold">Return to Map</Button>
+                                    <Button variant="secondary" onClick={onGoHome} className="mt-4 uppercase tracking-widest font-bold">RETURN TO MAP</Button>
                                 </div>
                             </div>
                         ) : (
                             <div className="text-center space-y-6">
-                                <div className="text-4xl animate-bounce">🍳</div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 border border-gray-200 inline-block px-4 py-2 animate-pulse">PREPARING RESCUE</div>
                                 <div>
-                                    <h3 className="text-xl font-medium mb-2">{order.merchant_name || 'Merchant'} is preparing your box</h3>
-                                    <p className="text-sm text-gray-500 max-w-sm mx-auto">Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.</p>
+                                    <h3 className="text-xl font-display uppercase tracking-tight mb-2">{order.merchant_name?.toUpperCase() || 'MERCHANT'} IS PREPARING YOUR BOX</h3>
+                                    <p className="text-xs text-gray-400 uppercase tracking-tight max-w-sm mx-auto">Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.</p>
                                 </div>
                             </div>
                         )}

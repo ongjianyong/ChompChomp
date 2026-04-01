@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chompchomp_secret_key_123')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chomp_jwt_secret_123')
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://user_user:user_pass@chomp-postgres:5432/user_db")
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
