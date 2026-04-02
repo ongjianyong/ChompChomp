@@ -56,6 +56,81 @@ def get_coordinates(postal_code):
     return None, None
 
 
+def extract_quantity(item):
+    """Normalize quantity values from heterogeneous upstream payloads."""
+    for key in ("quantity", "Quantity", "qty", "Qty", "available_quantity", "availableQuantity"):
+        value = item.get(key)
+        if value is None:
+            continue
+        try:
+            return int(float(value))
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def fetch_inventory_items(users):
+    """
+    Build listings from both global and merchant endpoints.
+    Some upstream responses omit items from the global endpoint after reservation,
+    so we merge merchant feeds to keep listings visible when stock remains.
+    """
+    merged_by_id = {}
+
+    try:
+        inventory_resp = requests.get(INVENTORY_SERVICE_URL, timeout=5)
+        if inventory_resp.status_code == 200:
+            for item in inventory_resp.json():
+                item_id = item.get("itemID")
+                if item_id is not None:
+                    merged_by_id[str(item_id)] = item.copy()
+    except Exception as e:
+        print(f"[DISCOVERY] Failed to fetch global inventory feed: {e}")
+
+    merchants = [u for u in users if u.get("role") == "merchant"]
+    for merchant in merchants:
+        merchant_id = str(merchant.get("id"))
+        if not merchant_id:
+            continue
+        try:
+            merchant_resp = requests.get(f"{INVENTORY_SERVICE_URL}/merchant/{merchant_id}", timeout=5)
+            if merchant_resp.status_code != 200:
+                continue
+
+            for item in merchant_resp.json():
+                item_id = item.get("itemID")
+                if item_id is None:
+                    continue
+                item_key = str(item_id)
+                base = merged_by_id.get(item_key, {})
+                merged = {**base, **item}
+                merged["merchantID"] = merged.get("merchantID", merchant_id)
+                merged["merchant_name"] = merged.get("merchant_name", merchant.get("name"))
+                merged_by_id[item_key] = merged
+        except Exception as e:
+            print(f"[DISCOVERY] Failed to fetch merchant feed for {merchant_id}: {e}")
+
+    return list(merged_by_id.values())
+
+
+def fetch_item_quantity(item_id):
+    """Fetch authoritative quantity for one item from Inventory MS."""
+    if item_id is None:
+        return None
+    try:
+        resp = requests.get(f"{INVENTORY_SERVICE_URL}/{item_id}/quantity", timeout=5)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        value = data.get("quantity", data.get("Quantity"))
+        if value is None:
+            return None
+        return int(float(value))
+    except Exception as e:
+        print(f"[DISCOVERY] Failed to fetch quantity for item {item_id}: {e}")
+        return None
+
+
 def publish_tiered_notifications(item_id, item_name, item_price, premium_users, free_users):
     """
     Scenario 1: Tiered Notification via TTL + Dead Letter Queue pattern.
@@ -175,14 +250,11 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
 
 def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
     """Core logic shared by both REST and GraphQL endpoints to fetch and filter listings."""
-    inventory_resp = requests.get(INVENTORY_SERVICE_URL, timeout=5)
     users_resp = requests.get(USER_SERVICE_URL, timeout=5)
-
-    if inventory_resp.status_code != 200:
-        raise Exception("Failed to fetch inventory")
-
-    items = inventory_resp.json()
     users = users_resp.json() if users_resp.status_code == 200 else []
+    items = fetch_inventory_items(users)
+    if not items:
+        return []
 
     merchant_coords = {
         str(u['id']): (u.get('lat'), u.get('long'))
@@ -191,6 +263,7 @@ def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
 
     now = datetime.now(timezone.utc)
     result = []
+    quantity_cache = {}
 
     for item in items:
         # ── Tier-based visibility ──────────────────────────────
@@ -208,8 +281,22 @@ def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
                     print(f"[DISCOVERY] Could not parse created_at: {e}")
 
         # ── Filter out out-of-stock items ──────────────────────
-        qty = item.get('Quantity', item.get('quantity', 0))
-        if int(qty or 0) <= 0:
+        qty = extract_quantity(item)
+        status = str(item.get('status', item.get('Status', ''))).strip().lower()
+
+        if qty is None:
+            item_id = item.get("itemID")
+            item_key = str(item_id)
+            if item_key not in quantity_cache:
+                quantity_cache[item_key] = fetch_item_quantity(item_id)
+            qty = quantity_cache[item_key]
+
+        if qty is not None and qty <= 0:
+            continue
+        if qty is None and status in ('sold_out', 'sold out', 'unavailable', 'inactive'):
+            continue
+        if qty is None:
+            # Quantity unknown and status is not reliable -> do not show inaccurate stock.
             continue
 
         # ── Distance calculation ───────────────────────────────
@@ -225,6 +312,7 @@ def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
                 continue
 
         item_with_dist = item.copy()
+        item_with_dist['quantity'] = qty
         item_with_dist['distance'] = round(dist, 2) if dist is not None else None
         result.append(item_with_dist)
 

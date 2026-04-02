@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import PremiumUpgradeModal from './PremiumUpgradeModal';
 
-const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfile }) => {
+const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfile, onUserUpdate }) => {
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const effectiveView = currentView === 'profile' ? user?.role : currentView;
 
     return (
         <>
@@ -17,7 +18,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
 
                     {/* Auth Controls */}
                     <div className="hidden md:flex space-x-6 items-center">
-                        {currentView === 'common' && (
+                        {effectiveView === 'common' && (
                             <button
                                 onClick={onOpenLogin}
                                 className="font-bold text-xs text-white bg-black px-6 py-2.5 hover:bg-gray-800 transition-colors uppercase tracking-[0.2em]"
@@ -26,7 +27,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                             </button>
                         )}
 
-                        {currentView === 'user' && user && (
+                        {effectiveView === 'user' && user && (
                             <div className="flex items-center space-x-6">
                                 <span className="font-medium text-sm text-black flex items-center space-x-2">
                                     <span className="h-2 w-2 bg-green-500 rounded-full"></span>
@@ -58,7 +59,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                             </div>
                         )}
 
-                        {currentView === 'merchant' && user && (
+                        {effectiveView === 'merchant' && user && (
                             <div className="flex items-center space-x-6">
                                 <button
                                     onClick={onGoProfile}
@@ -75,19 +76,16 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                 </div>
             </div>
         </nav>
-            {currentView === 'user' && user && (
+            {effectiveView === 'user' && user && (
                 <PremiumUpgradeModal 
                     isOpen={isUpgradeModalOpen} 
                     onClose={() => setIsUpgradeModalOpen(false)} 
                     user={user} 
                     onUpgradeSuccess={() => {
-                        const currentUserStr = localStorage.getItem('user');
-                        if (currentUserStr) {
-                            const currentUser = JSON.parse(currentUserStr);
-                            currentUser.tier = 'premium';
-                            localStorage.setItem('user', JSON.stringify(currentUser));
-                            window.location.reload();
-                        }
+                        const updatedUser = { ...user, tier: 'premium' };
+                        localStorage.setItem('user', JSON.stringify(updatedUser));
+                        if (onUserUpdate) onUserUpdate(updatedUser);
+                        setIsUpgradeModalOpen(false);
                     }} 
                 />
             )}

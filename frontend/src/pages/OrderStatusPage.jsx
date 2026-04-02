@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
 
-const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => {
+const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile, onUserUpdate }) => {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -55,7 +55,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
 
     return (
         <div className="min-h-screen bg-white">
-            <Navbar user={user} onLogout={onLogout} onGoHome={onGoHome} onGoProfile={onGoProfile} />
+            <Navbar currentView={user?.role || 'common'} user={user} onLogout={onLogout} onGoHome={onGoHome} onGoProfile={onGoProfile} onUserUpdate={onUserUpdate} />
 
             <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
                 <div className="border border-black p-8 md:p-12 space-y-12">
@@ -139,6 +139,23 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+                        <Button
+                            variant="secondary"
+                            onClick={onGoHome}
+                            className="uppercase tracking-widest font-bold"
+                        >
+                            Browse Shops
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={onGoProfile}
+                            className="uppercase tracking-widest font-bold"
+                        >
+                            My Profile
+                        </Button>
                     </div>
                 </div>
             </main>

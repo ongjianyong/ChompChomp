@@ -13,13 +13,38 @@ function App() {
 
   // Check for existing token on load
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-      setCurrentView(parsedUser.role);
-    }
+    const bootstrapSession = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+      if (!token || !savedUser) return;
+
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        const verifyResp = await fetch(`http://localhost:8000/api/v1/users/${parsedUser.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!verifyResp.ok) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+          setCurrentView('common');
+          return;
+        }
+
+        const freshUser = await verifyResp.json();
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        setUser(freshUser);
+        setCurrentView(freshUser.role);
+      } catch (err) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setCurrentView('common');
+      }
+    };
+
+    bootstrapSession();
   }, []);
 
   const handleLogin = async (email, password) => {
@@ -118,7 +143,7 @@ function App() {
         <Home {...sharedProps} />
       )}
       {currentView === 'profile' && user && (
-        <ProfilePage user={user} onUserUpdate={sharedProps.onUserUpdate} onGoHome={sharedProps.onGoHome} />
+        <ProfilePage {...sharedProps} />
       )}
       {currentView === 'merchant' && (
         <MerchantDashboard {...sharedProps} />

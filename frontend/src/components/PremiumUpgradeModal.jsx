@@ -47,6 +47,11 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
             });
 
             if (!upgradeResponse.ok) {
+                if (upgradeResponse.status === 404) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    throw new Error('Your account session is outdated. Please log in again before upgrading.');
+                }
                 const errData = await upgradeResponse.json();
                 throw new Error(errData.error || "Payment succeeded, but tier upgrade failed.");
             }

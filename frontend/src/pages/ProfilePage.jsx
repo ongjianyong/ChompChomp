@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import Navbar from '../components/Navbar';
 
-const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
+const ProfilePage = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfile, onUserUpdate }) => {
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [postalCode, setPostalCode] = useState(user?.postal_code || '');
@@ -42,7 +43,17 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
     if (!user) return null;
 
     return (
-        <div className="pt-24 pb-12 min-h-screen bg-gray-50 flex flex-col items-center">
+        <div className="min-h-screen bg-gray-50">
+            <Navbar
+                currentView={currentView}
+                user={user}
+                onOpenLogin={onOpenLogin}
+                onLogout={onLogout}
+                onGoHome={onGoHome}
+                onGoProfile={onGoProfile}
+                onUserUpdate={onUserUpdate}
+            />
+            <div className="pt-24 pb-12 min-h-screen flex flex-col items-center">
             <div className="w-full max-w-lg bg-white p-8 border border-gray-200 shadow-sm">
                 <div className="mb-8 border-b border-gray-100 pb-4">
                     <h2 className="text-3xl font-display uppercase tracking-tighter">Your Profile</h2>
@@ -131,6 +142,7 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                         {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                 </form>
+            </div>
             </div>
         </div>
     );
