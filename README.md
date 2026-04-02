@@ -121,6 +121,19 @@ docker compose up --build -d
 
 This starts Kong, PostgreSQL, Redis, RabbitMQ, and all microservices.
 
+### 3.1 If You Hit PostgreSQL Authentication Errors
+
+If logs show errors like password authentication failed for user_user or order_user, your local Postgres volume is likely carrying stale state from an earlier run.
+
+Reset and reinitialize containers and volumes:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
+Note: the init script in postgres_init runs on first database initialization for a volume.
+
 ### 4. Start the Frontend
 
 ```bash
