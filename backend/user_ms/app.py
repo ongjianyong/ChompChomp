@@ -4,6 +4,7 @@ import os
 import jwt
 import datetime
 import bcrypt
+import random
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -21,7 +22,7 @@ db = SQLAlchemy(app)
 # Models
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=False)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
@@ -51,10 +52,12 @@ with app.app_context():
     # Add seed data if empty
     if not User.query.filter_by(email='alice@user.com').first():
         alice_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        alice = User(name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065")
+        # Use a fixed high-entropy BigInt for seed Alice
+        alice = User(id=1000000001, name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065")
         
         merchant_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        merchant = User(name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839")
+        # Use a fixed high-entropy BigInt for seed Merchant
+        merchant = User(id=2000000002, name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839")
         
         db.session.add(alice)
         db.session.add(merchant)
@@ -98,7 +101,11 @@ def register():
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
+    # Generate a random 63-bit BigInt for global uniqueness
+    random_id = random.getrandbits(63)
+
     new_user = User(
+        id=random_id,
         name=name,
         email=email,
         password_hash=hashed_password,
