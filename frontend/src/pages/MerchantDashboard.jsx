@@ -26,8 +26,8 @@ const MerchantDashboard = ({
     quantity: "",
     original_price: "",
     price: "",
-    description: "Premium surplus box",,
-        category: 'bakery'
+    description: "Premium surplus box",
+    category: "bakery",
   });
 
     const CATEGORIES = [
@@ -195,8 +195,8 @@ const MerchantDashboard = ({
       quantity: item.quantity,
       original_price: item.original_price,
       price: item.price,
-      description: item.description || "",,
-            category: category
+      description: item.description || "",
+      category: category,
     });
     setFormError("");
     setIsListing(true);
@@ -267,7 +267,8 @@ const MerchantDashboard = ({
       original_price: "",
       price: "",
       description: "Premium surplus box",
-   , category: 'bakery' });
+      category: "bakery",
+    });
   };
 
   const inputClass =
