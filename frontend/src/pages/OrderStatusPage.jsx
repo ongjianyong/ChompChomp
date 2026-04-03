@@ -36,15 +36,22 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
         return () => clearInterval(interval);
     }, [orderId]);
 
-    if (!order) return <div className="min-h-screen flex items-center justify-center grayscale text-sm uppercase tracking-widest">Initialising Pickup Status...</div>;
+    if (!order) return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="flex items-center gap-3 text-slate-400">
+                <div className="w-4 h-4 border-2 border-slate-300 border-t-green-500 rounded-full animate-spin"></div>
+                <span className="text-sm font-medium">Loading order status...</span>
+            </div>
+        </div>
+    );
 
     const steps = [
-        { key: 'reserved', label: 'Box Reserved', done: true },
+        { key: 'reserved', label: 'Reserved', done: true },
         { key: 'paid', label: 'Payment Confirmed', done: true },
-        { 
-            key: 'ready', 
-            label: 'Ready for Pickup', 
-            done: order.status === 'ready_for_pickup' || order.status === 'completed' 
+        {
+            key: 'ready',
+            label: 'Ready for Pickup',
+            done: order.status === 'ready_for_pickup' || order.status === 'completed'
         },
         {
             key: 'completed',
@@ -54,35 +61,53 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
     ];
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-slate-50">
             <Navbar user={user} onLogout={onLogout} onGoHome={onGoHome} onGoProfile={onGoProfile} />
 
-            <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-                <div className="border border-black p-8 md:p-12 space-y-12">
+            <main className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 md:p-10 space-y-10">
                     {/* Header */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">ORDER TRACKING / {order.merchant_name?.toUpperCase() || 'SELF-PICKUP'}</p>
-                            <h1 className="text-4xl font-display uppercase tracking-tight">#{String(orderId)}</h1>
+                            <p className="text-xs font-semibold text-slate-400 mb-1">
+                                Order Tracking · {order.merchant_name?.toUpperCase() || 'SELF-PICKUP'}
+                            </p>
+                            <h1 className="text-3xl font-display font-semibold text-slate-900">#{String(orderId)}</h1>
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <div className="bg-gray-100 px-3 py-2 text-xs font-bold uppercase tracking-widest border border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <span className="bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 rounded-lg">
                                 {order.quantity || 1} Units
-                            </div>
-                            <div className="bg-black text-white px-4 py-2 text-xs font-bold uppercase tracking-widest">
-                                {order.status === 'completed' ? 'COMPLETED' : order.status === 'ready_for_pickup' ? 'READY' : 'PREPARING'}
-                            </div>
+                            </span>
+                            <span className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
+                                order.status === 'completed'
+                                    ? 'bg-green-100 text-green-700'
+                                    : order.status === 'ready_for_pickup'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-amber-100 text-amber-700'
+                            }`}>
+                                {order.status === 'completed' ? 'Completed' : order.status === 'ready_for_pickup' ? 'Ready' : 'Preparing'}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Progress Visual */}
-                    <div className="relative pt-8">
-                        <div className="absolute top-8 left-0 w-full h-px bg-gray-100"></div>
-                        <div className="relative flex justify-between items-center px-12">
-                            {steps.map((step, i) => (
-                                <div key={step.key} className="flex flex-col items-center group">
-                                    <div className={`w-4 h-4 rounded-full border-2 transition-all duration-500 z-10 ${step.done ? 'bg-black border-black' : 'bg-white border-gray-200'}`}></div>
-                                    <span className={`mt-4 text-[10px] font-bold uppercase tracking-widest text-center ${step.done ? 'text-black' : 'text-gray-300'}`}>
+                    {/* Progress Steps */}
+                    <div className="relative">
+                        <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-100"></div>
+                        <div className="relative flex justify-between">
+                            {steps.map((step) => (
+                                <div key={step.key} className="flex flex-col items-center gap-3 z-10">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                                        step.done
+                                            ? 'bg-green-600 border-green-600'
+                                            : 'bg-white border-slate-200'
+                                    }`}>
+                                        {step.done && (
+                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <span className={`text-xs font-semibold text-center max-w-[70px] ${step.done ? 'text-slate-700' : 'text-slate-300'}`}>
                                         {step.label}
                                     </span>
                                 </div>
@@ -91,51 +116,62 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                     </div>
 
                     {/* Status Content */}
-                    <div className="bg-gray-50 p-12 border border-gray-100">
+                    <div className="bg-slate-50 rounded-xl p-8">
                         {order.status === 'completed' ? (
-                            <div className="text-center space-y-8">
+                            <div className="text-center space-y-6">
                                 <div className="flex justify-center">
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-75"></div>
+                                        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-60"></div>
                                         <div className="relative bg-green-100 rounded-full p-4">
                                             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-display uppercase tracking-tight">ORDER COMPLETE</h3>
-                                    <p className="text-sm text-gray-500 mt-2">THANK YOU FOR RESCUING FOOD AND REDUCING WASTE TODAY!</p>
+                                    <h3 className="text-2xl font-display font-semibold text-slate-900">Order Complete</h3>
+                                    <p className="text-sm text-slate-500 mt-2">Thank you for rescuing food and reducing waste today!</p>
                                 </div>
-                                <div className="p-6 bg-white border border-gray-200 mt-6 inline-block">
-                                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">RECEIPT INFO</div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                        {order.quantity || 1} {order.quantity > 1 ? 'UNITS' : 'UNIT'} / TOTAL: ${order.total_paid?.toFixed(2)}
+                                <div className="bg-white rounded-xl border border-slate-100 p-5 inline-block">
+                                    <p className="text-xs font-semibold text-slate-400 mb-1">Receipt</p>
+                                    <p className="text-sm font-semibold text-slate-700">
+                                        {order.quantity || 1} {order.quantity > 1 ? 'units' : 'unit'} · Total: ${order.total_paid?.toFixed(2)}
                                     </p>
-                                    <Button variant="secondary" onClick={onGoHome} className="mt-8 uppercase tracking-widest font-bold">RETURN TO MAP</Button>
+                                    <Button variant="secondary" onClick={onGoHome} className="mt-4 text-sm font-semibold rounded-xl">
+                                        Return to Map
+                                    </Button>
                                 </div>
                             </div>
                         ) : order.status === 'ready_for_pickup' ? (
-                            <div className="text-center space-y-8">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-black border border-black inline-block px-4 py-2">COLLECTION READY</div>
+                            <div className="text-center space-y-6">
+                                <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-4 py-2 rounded-full">Collection Ready</span>
                                 <div>
-                                    <h3 className="text-2xl font-display uppercase tracking-tight">YOUR ORDER IS READY</h3>
-                                    <p className="text-sm text-gray-500 mt-2">SHOW THE CODE BELOW TO THE MERCHANT TO COLLECT YOUR RESCUE.</p>
+                                    <h3 className="text-2xl font-display font-semibold text-slate-900">Your order is ready</h3>
+                                    <p className="text-sm text-slate-500 mt-2">Show the code below to the merchant to collect your rescue.</p>
                                 </div>
-                                <div className="p-6 bg-white border-2 border-dashed border-black font-mono text-xl inline-block uppercase tracking-widest">
+                                <div className="bg-white border-2 border-dashed border-green-400 rounded-xl px-8 py-5 inline-block font-mono text-xl font-bold text-slate-900 tracking-widest">
                                     CHOMP-{String(orderId).slice(-4)}
                                 </div>
                                 <div>
-                                    <Button variant="secondary" onClick={onGoHome} className="mt-4 uppercase tracking-widest font-bold">RETURN TO MAP</Button>
+                                    <Button variant="secondary" onClick={onGoHome} className="text-sm font-semibold rounded-xl">
+                                        Return to Map
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center space-y-6">
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 border border-gray-200 inline-block px-4 py-2 animate-pulse">PREPARING RESCUE</div>
+                            <div className="text-center space-y-4">
+                                <span className="inline-flex items-center gap-2 bg-amber-50 text-amber-700 text-xs font-semibold px-4 py-2 rounded-full border border-amber-200 animate-pulse">
+                                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                                    Preparing rescue
+                                </span>
                                 <div>
-                                    <h3 className="text-xl font-display uppercase tracking-tight mb-2">{order.merchant_name?.toUpperCase() || 'MERCHANT'} IS PREPARING YOUR BOX</h3>
-                                    <p className="text-xs text-gray-400 uppercase tracking-tight max-w-sm mx-auto">Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.</p>
+                                    <h3 className="text-xl font-display font-semibold text-slate-900 mb-2">
+                                        {order.merchant_name || 'Merchant'} is preparing your box
+                                    </h3>
+                                    <p className="text-sm text-slate-400 max-w-sm mx-auto">
+                                        Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.
+                                    </p>
                                 </div>
                             </div>
                         )}
