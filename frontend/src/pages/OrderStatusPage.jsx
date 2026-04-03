@@ -173,6 +173,9 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                         Your payment is confirmed. Please head to the merchant location. Your box will be ready in minutes.
                                     </p>
                                 </div>
+                                <Button variant="secondary" onClick={onGoHome} className="text-sm font-semibold rounded-xl">
+                                    Back to Home
+                                </Button>
                             </div>
                         )}
                     </div>
