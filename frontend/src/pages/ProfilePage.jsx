@@ -61,7 +61,7 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                 </div>
 
                 {message.text && (
-                    <div className={`mb-6 p-4 text-sm font-medium rounded-xl ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                    <div className={`mb-6 p-4 text-sm font-medium rounded-xl ${message.type === 'success' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
                         {message.text}
                     </div>
                 )}
@@ -76,7 +76,7 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all text-sm"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
                         />
                     </div>
                     <div>
@@ -101,7 +101,7 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                             onChange={(e) => setPhone(e.target.value)}
                             required
                             placeholder="+6591234567"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all text-sm"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
                         />
                         <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +65). Required for SMS alerts.</p>
                     </div>
@@ -115,7 +115,7 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                             onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             required
                             placeholder="123456"
-                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all text-sm"
+                            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all text-sm"
                         />
                         <p className="mt-1 text-xs text-gray-500">Singapore 6-digit postal code. Used for calculating distance to shops.</p>
                     </div>
@@ -137,8 +137,8 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-green-600 text-white px-6 py-4 text-sm font-semibold rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ boxShadow: '0 8px 20px rgba(22,163,74,0.25)' }}
+                        className="w-full bg-orange-500 text-white px-6 py-4 text-sm font-semibold rounded-xl hover:bg-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ boxShadow: '0 8px 20px rgba(234, 88, 12, 0.25)' }}
                     >
                         {loading ? 'Saving...' : 'Save Changes'}
                     </button>

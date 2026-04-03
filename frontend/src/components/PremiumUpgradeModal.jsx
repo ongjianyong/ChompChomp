@@ -63,13 +63,13 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-md border border-amber-400 animate-in fade-in zoom-in duration-300 shadow-premium">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-amber-50">
+            <div className="bg-white w-full max-w-md border border-slate-900 animate-in fade-in zoom-in duration-300 shadow-xl overflow-hidden rounded-2xl">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-900">
                     <div className="flex flex-col">
-                        <h2 className="text-xl font-display uppercase tracking-tight text-amber-600">UPGRADE TO PREMIUM</h2>
-                        <span className="text-[10px] text-amber-500 uppercase tracking-widest font-bold">ONE-TIME PAYMENT</span>
+                        <h2 className="text-xl font-display tracking-tight text-white">Upgrade to Premium</h2>
+                        <span className="text-[10px] text-slate-400 tracking-widest font-bold">LIFETIME ACCESS</span>
                     </div>
-                    <button onClick={onClose} className="text-amber-400 hover:text-amber-600">
+                    <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -77,52 +77,51 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
                 </div>
 
                 <div className="p-8 space-y-6">
-                    <div className="bg-amber-50 border border-amber-200 p-4 space-y-2">
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-amber-700">PREMIUM BENEFITS</h3>
-                        <ul className="text-sm text-amber-700 space-y-2">
-                            <li className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                INSTANT SMS NOTIFICATIONS FOR NEW LISTINGS
+                    <div className="bg-slate-50 border border-slate-100 p-5 space-y-3 rounded-xl">
+                        <h3 className="text-[10px] font-bold tracking-widest text-slate-400">PREMIUM BENEFITS</h3>
+                        <ul className="text-sm text-slate-700 space-y-2.5">
+                            <li className="flex items-center gap-3">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-900"></span>
+                                Instant SMS Notifications
                             </li>
-                            <li className="flex items-center gap-2 uppercase text-[10px] font-medium tracking-tight">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                PRIORITY ACCESS TO HIGH-DEMAND BOXES
+                            <li className="flex items-center gap-3">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-900"></span>
+                                Priority Access to Flash Sales
                             </li>
-
                         </ul>
                     </div>
 
-                    <div className="bg-gray-50 p-4 border border-gray-100 flex justify-between font-bold text-[10px] uppercase tracking-widest">
-                        <span>LIFETIME ACCESS</span>
+                    <div className="bg-slate-900 p-5 flex justify-between font-bold text-xs tracking-widest text-white rounded-xl shadow-lg shadow-slate-200">
+                        <span>ONE-TIME PAYMENT</span>
                         <span>$5.00</span>
                     </div>
 
                     <form onSubmit={handlePayment} className="space-y-6">
                         <div className="space-y-4">
-                            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Card Information</label>
+                            <label className="text-xs font-bold tracking-widest text-slate-400">Card Information</label>
                             <div className="space-y-3">
                                 <input
                                     type="text"
-                                    placeholder="CARDHOLDER NAME"
+                                    placeholder="Cardholder Name"
                                     required
-                                    className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
+                                    className="w-full border border-slate-100 bg-slate-50 p-4 text-sm focus:border-slate-900 focus:bg-white outline-none transition-all rounded-xl placeholder:text-slate-300"
                                     value={cardName}
                                     onChange={(e) => setCardName(e.target.value)}
                                 />
                                 <input
                                     type="text"
-                                    placeholder="CARD NUMBER"
+                                    placeholder="Card Number"
                                     required
-                                    className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
+                                    className="w-full border border-slate-100 bg-slate-50 p-4 text-sm focus:border-slate-900 focus:bg-white outline-none transition-all rounded-xl placeholder:text-slate-300"
                                     value={cardNumber}
                                     onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').slice(0, 16))}
                                 />
                                 <div className="grid grid-cols-2 gap-3">
                                     <input
                                         type="text"
-                                        placeholder="MM/YY"
+                                        placeholder="MM / YY"
                                         required
-                                        className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
+                                        className="w-full border border-slate-100 bg-slate-50 p-4 text-sm focus:border-slate-900 focus:bg-white outline-none transition-all rounded-xl placeholder:text-slate-300"
                                         value={cardExpiry}
                                         onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
                                     />
@@ -130,7 +129,7 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
                                         type="text"
                                         placeholder="CVC"
                                         required
-                                        className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
+                                        className="w-full border border-slate-100 bg-slate-50 p-4 text-sm focus:border-slate-900 focus:bg-white outline-none transition-all rounded-xl placeholder:text-slate-300"
                                         value={cardCVC}
                                         onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, '').slice(0, 3))}
                                     />
@@ -138,25 +137,25 @@ const PremiumUpgradeModal = ({ isOpen, onClose, user, onUpgradeSuccess }) => {
                             </div>
                         </div>
 
-                        {error && <div className="p-3 bg-red-50 text-red-600 text-xs border border-red-100">{error}</div>}
+                        {error && <div className="p-3 bg-red-50 text-red-600 text-xs border border-red-100 rounded-xl">{error}</div>}
 
                         <Button
                             type="submit"
                             variant="primary"
                             disabled={isProcessing}
-                            className="w-full bg-amber-500 border-transparent text-white hover:bg-amber-600 py-4 uppercase tracking-widest font-bold rounded-none flex items-center justify-center space-x-2"
+                            className="w-full bg-slate-900 border-transparent text-white hover:bg-black py-4 tracking-widest font-bold rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-slate-200"
                         >
                             {isProcessing ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    <span>PROCESSING...</span>
+                                    <span>Processing...</span>
                                 </>
                             ) : (
-                                <span>PAY $5.00</span>
+                                <span>Pay $5.00</span>
                             )}
                         </Button>
                     </form>
-                    <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest">
+                    <p className="text-[10px] text-gray-400 text-center tracking-widest">
                         Secured by Stripe Simulation
                     </p>
                 </div>

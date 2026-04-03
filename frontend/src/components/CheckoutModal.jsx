@@ -147,12 +147,12 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                 <div className="p-6 space-y-5">
                     {/* Reservation Status */}
                     {isReserved ? (
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                <span className="text-xs font-semibold text-green-700">Stock secured for</span>
+                                <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                <span className="text-xs font-semibold text-orange-600">Stock secured for</span>
                             </div>
-                            <span className="text-xl font-bold text-green-700 font-display">
+                            <span className="text-xl font-bold text-orange-600 font-display">
                                 {Math.floor(reservationTimer / 60)}:{String(reservationTimer % 60).padStart(2, '0')}
                             </span>
                         </div>
@@ -186,7 +186,7 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                                     type="text"
                                     placeholder="Cardholder name"
                                     required
-                                    className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                    className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
                                     value={cardName}
                                     onChange={(e) => setCardName(e.target.value)}
                                 />
@@ -194,7 +194,7 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                                     type="text"
                                     placeholder="Card number"
                                     required
-                                    className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                    className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
                                     value={cardNumber}
                                     onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').slice(0, 16))}
                                 />
@@ -203,7 +203,7 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                                         type="text"
                                         placeholder="MM/YY"
                                         required
-                                        className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                        className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
                                         value={cardExpiry}
                                         onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
                                     />
@@ -211,7 +211,7 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                                         type="text"
                                         placeholder="CVC"
                                         required
-                                        className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                        className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all"
                                         value={cardCVC}
                                         onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, '').slice(0, 3))}
                                     />

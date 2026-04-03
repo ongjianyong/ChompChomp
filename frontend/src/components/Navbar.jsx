@@ -10,13 +10,15 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
 
-                    {/* Logo */}
+                    {/* Simple Clean Logo */}
                     <div className="flex-shrink-0 flex items-center cursor-pointer gap-2" onClick={onGoHome}>
-                        <div className="w-8 h-8 bg-green-600 rounded-xl flex items-center justify-center">
-                            <span className="text-white font-display font-bold text-sm">C</span>
-                        </div>
-                        <span className="font-display font-semibold text-xl tracking-tight text-slate-900">
-                            Chomp<span className="text-green-600">Chomp</span>
+                        <img 
+                            src="/brand-icon-v3.png" 
+                            alt="ChompChomp Logo" 
+                            className="h-10 w-10 rounded-lg object-cover" 
+                        />
+                        <span className="font-display font-bold text-2xl tracking-tighter text-slate-900 leading-none">
+                            Chomp<span className="text-orange-600">Chomp</span>
                         </span>
                     </div>
 
@@ -25,7 +27,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                         {currentView === 'common' && (
                             <button
                                 onClick={onOpenLogin}
-                                className="font-semibold text-sm text-white bg-green-600 px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors"
+                                className="font-semibold text-sm text-white bg-orange-600 px-6 py-2.5 rounded-xl hover:bg-orange-700 transition-colors"
                             >
                                 Login
                             </button>
@@ -38,12 +40,12 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                                     className="flex items-center space-x-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
                                     title="Edit Profile"
                                 >
-                                    <span className="h-2 w-2 bg-green-500 rounded-full"></span>
+                                    <span className="h-2 w-2 bg-orange-500 rounded-full"></span>
                                     <span>{user.name}</span>
                                 </button>
                                 {user.tier === 'premium' ? (
                                     <span
-                                        className="font-semibold text-xs px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 cursor-default"
+                                        className="font-semibold text-xs px-3 py-1.5 rounded-full bg-slate-900 text-slate-100 cursor-default shadow-sm"
                                         title="You are a Premium Member"
                                     >
                                         Premium
@@ -51,7 +53,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                                 ) : (
                                     <button
                                         onClick={() => setIsUpgradeModalOpen(true)}
-                                        className="font-semibold text-xs px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                        className="font-semibold text-xs px-3 py-1.5 rounded-full bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all shadow-sm active:scale-95"
                                         title="Upgrade to Premium"
                                     >
                                         Get Premium
@@ -70,7 +72,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                                 >
                                     {user.name}
                                 </button>
-                                <button onClick={onLogout} className="font-semibold text-sm text-white bg-green-600 hover:bg-green-700 transition-colors px-5 py-2.5 rounded-xl">Logout</button>
+                                <button onClick={onLogout} className="font-semibold text-sm text-white bg-orange-600 hover:bg-orange-700 transition-colors px-5 py-2.5 rounded-xl">Logout</button>
                             </div>
                         )}
                     </div>

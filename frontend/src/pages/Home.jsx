@@ -82,7 +82,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                         style={{
                             width: '500px',
                             height: '500px',
-                            background: 'rgba(22, 163, 74, 0.08)',
+                            background: 'rgba(234, 88, 12, 0.08)',
                             filter: 'blur(120px)',
                             top: '-100px',
                             left: '50%',
@@ -91,13 +91,13 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                         }}
                     />
                     <div className="relative flex flex-col items-center text-center">
-                        <span className="animate-fade-up inline-flex items-center gap-2 bg-green-50 text-green-700 text-xs font-semibold px-4 py-2 rounded-full border border-green-200 mb-6">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                        <span className="animate-fade-up inline-flex items-center gap-2 bg-orange-50 text-orange-600 text-xs font-semibold px-4 py-2 rounded-full border border-orange-200 mb-6">
+                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
                             Live Flash Sales Now Available
                         </span>
                         <h1 className="animate-fade-up-delay-1 text-5xl md:text-7xl font-display font-semibold text-slate-900 mb-6">
                             Rescue great food.<br />
-                            <span className="text-green-600">Pay less. Waste nothing.</span>
+                            <span className="text-orange-500">Pay less. Waste nothing.</span>
                         </h1>
                         <p className="animate-fade-up-delay-2 text-slate-500 text-base max-w-xl mb-10">
                             Premium surplus from top restaurants — claimed before it goes to waste.
@@ -122,14 +122,14 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                             className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'browse' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                             Listings
-                            {activeTab === 'browse' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 rounded-full"></div>}
+                            {activeTab === 'browse' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-full"></div>}
                         </button>
                         <button
                             onClick={() => setActiveTab('orders')}
                             className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'orders' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                             My Orders
-                            {activeTab === 'orders' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 rounded-full"></div>}
+                            {activeTab === 'orders' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-full"></div>}
                         </button>
                     </div>
                 )}
@@ -138,19 +138,19 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     <>
                         <div className="flex flex-wrap items-center gap-4 mb-10">
                             <div className="flex items-center gap-3">
-                                <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse"></div>
+                                <div className="h-2.5 w-2.5 bg-orange-500 rounded-full animate-pulse"></div>
                                 <h2 className="text-3xl md:text-4xl font-display font-semibold tracking-tight text-slate-900">
                                     {isGuest ? 'Live Flash Sales' : 'The Daily Drop'}
                                 </h2>
                             </div>
 
                             {!isGuest && user?.role === 'user' && (
-                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm transition-all ${
                                     user?.tier === 'premium'
-                                        ? 'bg-amber-100 text-amber-700'
-                                        : 'bg-slate-100 text-slate-500'
+                                        ? 'bg-slate-900 text-white'
+                                        : 'bg-slate-50 text-slate-400 border border-slate-100'
                                 }`}>
-                                    {user?.tier === 'premium' ? 'Premium — Early Access' : 'Free — Delayed Access'}
+                                    {user?.tier === 'premium' ? 'Premium' : 'Regular'}
                                 </span>
                             )}
 
@@ -160,7 +160,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                     <select
                                         value={maxDist || ''}
                                         onChange={(e) => setMaxDist(e.target.value ? Number(e.target.value) : null)}
-                                        className="bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 py-1.5 px-3 outline-none focus:border-green-500"
+                                        className="bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 py-1.5 px-3 outline-none focus:border-orange-500"
                                     >
                                         <option value="">Any distance</option>
                                         <option value="2">2 km</option>
@@ -206,7 +206,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 {items.map((product, idx) => (
                                     <div key={product.itemID} className="group bg-white rounded-2xl border border-slate-100 hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden animate-fade-up" style={{ animationDelay: `${idx * 0.07}s`, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
                                         {/* Card top color band */}
-                                        <div className="h-1.5 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                                        <div className="h-1.5 bg-gradient-to-r from-orange-400 to-amber-500"></div>
 
                                         <div className="p-6 flex flex-col flex-grow">
                                             {/* Row 1: Merchant + Distance */}
@@ -226,8 +226,8 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                             {/* Row 3: Availability pill */}
                                             <div className="mb-5">
                                                 {product.quantity > 0 ? (
-                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">
-                                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600">
+                                                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
                                                         {product.quantity} available
                                                     </span>
                                                 ) : (

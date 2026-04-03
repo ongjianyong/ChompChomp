@@ -16,7 +16,7 @@ const NotificationBanner = ({ message, type = 'info', duration = 5000 }) => {
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md animate-slide-down">
             <div className="bg-brand-dark text-white px-6 py-4 rounded-xl shadow-premium flex items-center justify-between">
                 <div className="flex items-center">
-                    <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse mr-3"></span>
+                    <span className="h-2 w-2 bg-orange-400 rounded-full animate-pulse mr-3"></span>
                     <p className="font-sans font-medium text-sm">{message}</p>
                 </div>
                 <button onClick={() => setIsVisible(false)} className="text-gray-400 hover:text-white">

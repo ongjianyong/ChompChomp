@@ -40,7 +40,7 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
                             </div>
                             <div className="bg-slate-50 rounded-xl p-4">
                                 <span className="text-xs font-semibold text-slate-400 block mb-1">Availability</span>
-                                <span className={`text-sm font-bold ${box.quantity > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                <span className={`text-sm font-bold ${box.quantity > 0 ? 'text-orange-500' : 'text-red-500'}`}>
                                     {box.quantity} units left
                                 </span>
                             </div>
@@ -66,7 +66,7 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
                         </div>
                     </div>
 
-                    <div className="bg-green-50 rounded-xl p-4 flex justify-between items-center">
+                    <div className="bg-orange-50 rounded-xl p-4 flex justify-between items-center">
                         <div>
                             <p className="text-xs font-semibold text-slate-500">{quantity} unit{quantity > 1 ? 's' : ''} · Store pickup</p>
                             <p className="text-xs text-slate-400 mt-0.5">Stock held for 60 seconds upon selection</p>

@@ -39,7 +39,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
     if (!order) return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
             <div className="flex items-center gap-3 text-slate-400">
-                <div className="w-4 h-4 border-2 border-slate-300 border-t-green-500 rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-slate-300 border-t-orange-500 rounded-full animate-spin"></div>
                 <span className="text-sm font-medium">Loading order status...</span>
             </div>
         </div>
@@ -80,7 +80,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                             </span>
                             <span className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${
                                 order.status === 'completed'
-                                    ? 'bg-green-100 text-green-700'
+                                    ? 'bg-orange-100 text-orange-600'
                                     : order.status === 'ready_for_pickup'
                                     ? 'bg-blue-100 text-blue-700'
                                     : 'bg-amber-100 text-amber-700'
@@ -98,7 +98,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                 <div key={step.key} className="flex flex-col items-center gap-3 z-10">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
                                         step.done
-                                            ? 'bg-green-600 border-green-600'
+                                            ? 'bg-orange-500 border-orange-500'
                                             : 'bg-white border-slate-200'
                                     }`}>
                                         {step.done && (
@@ -121,9 +121,9 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                             <div className="text-center space-y-6">
                                 <div className="flex justify-center">
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-60"></div>
-                                        <div className="relative bg-green-100 rounded-full p-4">
-                                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="absolute inset-0 bg-orange-100 rounded-full animate-ping opacity-60"></div>
+                                        <div className="relative bg-orange-100 rounded-full p-4">
+                                            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
@@ -150,7 +150,7 @@ const OrderStatusPage = ({ orderId, user, onLogout, onGoHome, onGoProfile }) => 
                                     <h3 className="text-2xl font-display font-semibold text-slate-900">Your order is ready</h3>
                                     <p className="text-sm text-slate-500 mt-2">Show the code below to the merchant to collect your rescue.</p>
                                 </div>
-                                <div className="bg-white border-2 border-dashed border-green-400 rounded-xl px-8 py-5 inline-block font-mono text-xl font-bold text-slate-900 tracking-widest">
+                                <div className="bg-white border-2 border-dashed border-orange-400 rounded-xl px-8 py-5 inline-block font-mono text-xl font-bold text-slate-900 tracking-widest">
                                     CHOMP-{String(orderId).slice(-4)}
                                 </div>
                                 <div>
