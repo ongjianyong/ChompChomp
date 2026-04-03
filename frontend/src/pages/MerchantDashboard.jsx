@@ -20,8 +20,19 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
         quantity: '',
         original_price: '',
         price: '',
-        description: 'Premium surplus box'
+        description: 'Premium surplus box',
+        category: 'bakery'
     });
+
+    const CATEGORIES = [
+        { id: 'bakery', name: 'Bakery', icon: '🥖' },
+        { id: 'meals', name: 'Meals', icon: '🍱' },
+        { id: 'drinks', name: 'Drinks', icon: '🥤' },
+        { id: 'desserts', name: 'Desserts', icon: '🍩' },
+        { id: 'healthy', name: 'Healthy', icon: '🥗' },
+        { id: 'proteins', name: 'Proteins', icon: '🥩' },
+        { id: 'others', name: 'Others', icon: '📦' }
+    ];
 
     useEffect(() => {
         const fetchMerchantItems = async () => {
@@ -103,6 +114,13 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                 : 'http://localhost:8000/api/v1/discovery/listings';
             const method = editingItemId ? 'PUT' : 'POST';
 
+            // Extract category and clean up name
+            const categoryTag = `[${formData.category.toUpperCase()}]`;
+            let cleanName = formData.name;
+            // Remove existing tag if present during edit
+            cleanName = cleanName.replace(/^\[[A-Z]+\]\s*/, '');
+            const finalName = `${categoryTag} ${cleanName}`;
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -114,6 +132,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                     merchant_name: user.name,
                     postal_code: user.postal_code,
                     ...formData,
+                    name: finalName,
                     quantity: parseInt(formData.quantity),
                     price,
                     original_price: originalPrice
@@ -137,12 +156,20 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
 
     const handleEditListing = (item) => {
         setEditingItemId(item.itemID);
+        
+        // Parse category from name
+        const displayName = item.name || '';
+        const match = displayName.match(/^\[([A-Z]+)\]/);
+        const category = match ? match[1].toLowerCase() : 'others';
+        const cleanName = displayName.replace(/^\[[A-Z]+\]\s*/, '');
+
         setFormData({
-            name: item.name,
+            name: cleanName,
             quantity: item.quantity,
             original_price: item.original_price,
             price: item.price,
-            description: item.description || ''
+            description: item.description || '',
+            category: category
         });
         setFormError('');
         setIsListing(true);
@@ -197,7 +224,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
         setIsListing(false);
         setEditingItemId(null);
         setFormError('');
-        setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box' });
+        setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box', category: 'bakery' });
     };
 
     const inputClass = "w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all";
@@ -277,6 +304,21 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Box Category</label>
+                                    <select
+                                        required
+                                        className={inputClass}
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    >
+                                        {CATEGORIES.map(cat => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.icon} {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className={labelClass}>Quantity Available</label>

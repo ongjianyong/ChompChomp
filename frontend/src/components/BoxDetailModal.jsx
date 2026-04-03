@@ -11,26 +11,46 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
     const itemTotal = box.price * quantity;
     const totalPrice = itemTotal;
 
+    const getCategoryImage = (name) => {
+        const displayName = name || '';
+        const match = displayName.match(/^\[([A-Z]+)\]/);
+        const category = match ? match[1].toLowerCase() : 'others';
+        const validCategories = ['bakery', 'meals', 'drinks', 'desserts', 'healthy', 'proteins', 'others'];
+        return validCategories.includes(category) ? `/category-${category}.png` : '/category-others.png';
+    };
+
+    const formatName = (name) => {
+        return (name || '').replace(/^\[[A-Z]+\]\s*/, '');
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
-                {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-display font-semibold text-slate-900">Item Details</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors">
+            <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+                {/* Hero Image */}
+                <div className="h-64 relative overflow-hidden">
+                    <img 
+                        src={getCategoryImage(box.name)} 
+                        alt={box.name}
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <button 
+                        onClick={onClose} 
+                        className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 rounded-full transition-all"
+                    >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
+                    <div className="absolute bottom-6 left-6">
+                        <p className="text-xs font-bold text-white/80 uppercase tracking-widest mb-1">{box.merchant_name}</p>
+                        <h2 className="text-3xl font-display font-semibold text-white leading-tight">{formatName(box.name)}</h2>
+                    </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-6 space-y-6">
-                    <div>
-                        <p className="text-xs font-semibold text-slate-400 mb-1">{box.merchant_name || `Merchant #${box.merchantID}`}</p>
-                        <h3 className="text-3xl font-display font-semibold text-slate-900 mb-4">{box.name}</h3>
-
-                        <div className="grid grid-cols-2 gap-4">
+                <div className="p-8 space-y-8">
+                    <div className="grid grid-cols-2 gap-4">
                             <div className="bg-slate-50 rounded-xl p-4">
                                 <span className="text-xs font-semibold text-slate-400 block mb-1">Savings</span>
                                 <div className="flex items-baseline gap-2">
@@ -44,9 +64,10 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
                                     {box.quantity} units left
                                 </span>
                             </div>
-                        </div>
                     </div>
+                </div>
 
+                <div className="p-8 pt-0 space-y-8">
                     <div>
                         <label className="text-xs font-semibold text-slate-400 block mb-3">Quantity</label>
                         <div className="flex items-center bg-slate-50 rounded-xl w-fit border border-slate-200">
