@@ -9,10 +9,11 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     const [editingItemId, setEditingItemId] = useState(null);
     const [itemToRemove, setItemToRemove] = useState(null);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
-    const [formErrors, setFormErrors] = useState([]);
+    const [formError, setFormError] = useState('');
 
     const [orders, setOrders] = useState([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
+    const [activeOrderTab, setActiveOrderTab] = useState('incoming');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -39,36 +40,35 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
 
         const fetchMerchantOrders = async () => {
             try {
-                // Fetch full inventory list (the only GET that exists)
                 let nameMap = {};
-                    try {
-                        const invResp = await fetch(`http://localhost:8000/api/v1/inventory`);
-                        if (invResp.ok) {
-                            const allItems = await invResp.json();
-                            allItems.forEach(item => {
-                                const id = item.itemID || item.ItemID;
-                                const name = item.name || item.Name;
-                                if (id && name) nameMap[id] = name;
-                            });
-                        }
-                    } catch {}
-
-                    const response = await fetch(`http://localhost:8000/api/v1/orders/merchant/${user.id}`, {
-                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        setOrders(data.map(o => ({
-                            ...o,
-                            itemName: nameMap[o.itemID] ?? `Item #${o.itemID}`
-                        })));
+                try {
+                    const invResp = await fetch(`http://localhost:8000/api/v1/inventory`);
+                    if (invResp.ok) {
+                        const allItems = await invResp.json();
+                        allItems.forEach(item => {
+                            const id = item.itemID || item.ItemID;
+                            const name = item.name || item.Name;
+                            if (id && name) nameMap[id] = name;
+                        });
                     }
-                } catch (error) {
-                    console.error("Failed to fetch merchant orders:", error);
-                } finally {
-                    setOrdersLoading(false);
+                } catch {}
+
+                const response = await fetch(`http://localhost:8000/api/v1/orders/merchant/${user.id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setOrders(data.map(o => ({
+                        ...o,
+                        itemName: nameMap[o.itemID] ?? `Item #${o.itemID}`
+                    })));
                 }
-            };
+            } catch (error) {
+                console.error("Failed to fetch merchant orders:", error);
+            } finally {
+                setOrdersLoading(false);
+            }
+        };
 
         if (user && user.id) {
             fetchMerchantItems();
@@ -76,42 +76,24 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
         }
     }, [user]);
 
+    // Split orders into incoming vs completed
+    const incomingOrders = orders.filter(o => o.status !== 'completed');
+    const completedOrders = orders.filter(o => o.status === 'completed');
+
     const handleInputChange = (e) => {
-        setFormErrors([]);
+        setFormError('');
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmitListing = async (e) => {
         e.preventDefault();
-        setFormErrors([]);
+        setFormError('');
 
-        const errors = [];
         const price = parseFloat(formData.price);
         const originalPrice = parseFloat(formData.original_price);
-        const quantity = Number(formData.quantity);
 
-        if (!Number.isInteger(quantity)) {
-            errors.push('Quantity must be an integer.');
-        }
-        if (quantity <= 0) {
-            errors.push('Quantity must be greater than 0.');
-        }
-        if (quantity >= 1000) {
-            errors.push('Quantity must be less than 1000.');
-        }
-        if (!Number.isFinite(price) || !Number.isFinite(originalPrice)) {
-            errors.push('Price fields must be valid numbers.');
-        } else {
-            if (originalPrice <= 0 || price <= 0) {
-                errors.push('Prices must be greater than 0.');
-            }
-            if (price >= originalPrice) {
-                errors.push('Discounted price must be lower than the original price.');
-            }
-        }
-
-        if (errors.length) {
-            setFormErrors(errors);
+        if (Number.isFinite(price) && Number.isFinite(originalPrice) && price === originalPrice) {
+            setFormError('Discounted price must be different from the original price.');
             return;
         }
 
@@ -140,13 +122,12 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
 
             if (response.ok) {
                 setIsListing(false);
-                setFormErrors([]);
+                setFormError('');
                 setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box' });
                 window.location.reload();
             } else {
                 const data = await response.json().catch(() => ({}));
-                const message = data.error || data.message || 'Failed to save listing.';
-                setFormErrors([message]);
+                setFormError(data.error || data.message || 'Failed to save listing.');
             }
         } catch (error) {
             console.error("Failed to save listing:", error);
@@ -202,6 +183,10 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
             });
             if (response.ok) {
                 setOrders(orders.map(o => o.orderID === orderId ? { ...o, status: newStatus } : o));
+                // If the order just became completed, switch to the completed tab
+                if (newStatus === 'completed') {
+                    setActiveOrderTab('completed');
+                }
             }
         } catch (error) {
             console.error("Failed to update order status:", error);
@@ -217,6 +202,41 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
 
     const inputClass = "w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all";
     const labelClass = "text-xs font-semibold text-slate-400 block mb-1.5";
+
+    const OrderRow = ({ order, idx }) => (
+        <div
+            key={order.orderID || idx}
+            className="bg-white rounded-2xl border border-slate-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-up hover:shadow-md transition-all duration-200"
+            style={{ animationDelay: `${idx * 0.05}s`, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}
+        >
+            <div className="flex items-center gap-5">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-slate-500">#{order.orderID}</span>
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-slate-900">{order.itemName} · {order.quantity} unit{order.quantity > 1 ? 's' : ''}</p>
+                    <p className="text-xs text-slate-400">Customer #{order.customerID} · ${order.total_paid?.toFixed(2)}</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-3">
+                {order.status === 'paid' && (
+                    <Button onClick={() => handleUpdateOrderStatus(order.orderID, 'ready_for_pickup')} variant="secondary" className="rounded-xl py-2 px-4 text-xs font-semibold">
+                        Mark Ready
+                    </Button>
+                )}
+                {order.status === 'ready_for_pickup' && (
+                    <Button onClick={() => handleUpdateOrderStatus(order.orderID, 'completed')} variant="primary" className="rounded-xl py-2 px-4 text-xs font-semibold">
+                        Process Pickup
+                    </Button>
+                )}
+                {order.status === 'completed' && (
+                    <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-50 text-green-600">
+                        ✓ Completed
+                    </span>
+                )}
+            </div>
+        </div>
+    );
 
     return (
         <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #f9fafb 0%, #f1f5f9 100%)' }}>
@@ -294,13 +314,9 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                     />
                                 </div>
                             </div>
-                            {formErrors.length > 0 && (
+                            {formError && (
                                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {formErrors.map((err, idx) => (
-                                            <li key={idx}>{err}</li>
-                                        ))}
-                                    </ul>
+                                    {formError}
                                 </div>
                             )}
                             <div className="flex justify-end pt-2">
@@ -382,9 +398,51 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                     )}
                 </div>
 
-                {/* Incoming Orders */}
+                {/* Orders Section with Tabs */}
                 <div>
-                    <h2 className="text-xl font-display font-semibold text-slate-900 mb-5">Incoming Orders</h2>
+                    {/* Tab Header */}
+                    <div className="flex items-center gap-1 mb-5 bg-slate-100 p-1 rounded-xl w-fit">
+                        <button
+                            onClick={() => setActiveOrderTab('incoming')}
+                            className={`relative px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                activeOrderTab === 'incoming'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                        >
+                            Incoming Orders
+                            {incomingOrders.length > 0 && (
+                                <span className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                                    activeOrderTab === 'incoming'
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-slate-300 text-slate-600'
+                                }`}>
+                                    {incomingOrders.length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveOrderTab('completed')}
+                            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                                activeOrderTab === 'completed'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                        >
+                            Completed
+                            {completedOrders.length > 0 && (
+                                <span className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                                    activeOrderTab === 'completed'
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-slate-300 text-slate-600'
+                                }`}>
+                                    {completedOrders.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Tab Content */}
                     {ordersLoading ? (
                         <div className="space-y-3">
                             {[1, 2].map((i) => (
@@ -399,50 +457,34 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                 </div>
                             ))}
                         </div>
-                    ) : orders.length === 0 ? (
-                        <div className="bg-white rounded-2xl border border-slate-100 py-16 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
-                            <div className="text-3xl mb-3">🛒</div>
-                            <p className="text-slate-700 font-semibold mb-1">No incoming orders yet</p>
-                            <p className="text-slate-400 text-sm">Orders will appear here once customers purchase your listings.</p>
-                        </div>
+                    ) : activeOrderTab === 'incoming' ? (
+                        incomingOrders.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-slate-100 py-16 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+                                <div className="text-3xl mb-3">🛒</div>
+                                <p className="text-slate-700 font-semibold mb-1">No incoming orders</p>
+                                <p className="text-slate-400 text-sm">Orders will appear here once customers purchase your listings.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {incomingOrders.map((order, idx) => (
+                                    <OrderRow key={order.orderID || idx} order={order} idx={idx} />
+                                ))}
+                            </div>
+                        )
                     ) : (
-                        <div className="space-y-3">
-                            {orders.map((order, idx) => (
-                                <div key={order.orderID || idx} className="bg-white rounded-2xl border border-slate-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-up hover:shadow-md transition-all duration-200" style={{ animationDelay: `${idx * 0.05}s`, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                                            <span className="text-xs font-bold text-slate-500">#{order.orderID}</span>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-slate-900">{order.itemName} · {order.quantity} unit{order.quantity > 1 ? 's' : ''}</p>
-                                            <p className="text-xs text-slate-400">Customer #{order.customerID} · ${order.total_paid?.toFixed(2)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        {/* Status shown only if the order is completed */}
-                                        {order.status === 'completed' && (
-                                            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-500">
-                                                Completed
-                                            </span>
-                                        )}
-                                        {/* Action buttons are sufficient indicator of state */}
-                                        {order.status === 'paid' && (
-                                            <Button onClick={() => handleUpdateOrderStatus(order.orderID, 'ready_for_pickup')} variant="secondary" className="rounded-xl py-2 px-4 text-xs font-semibold">
-                                                Mark Ready
-                                            </Button>
-                                        )}
-                                        {order.status === 'ready_for_pickup' && (
-                                            <Button onClick={() => handleUpdateOrderStatus(order.orderID, 'completed')} variant="primary" className="rounded-xl py-2 px-4 text-xs font-semibold">
-                                                Process Pickup
-                                            </Button>
-                                        )}
-                                        {order.status === 'completed' && (
-                                            <span className="text-xs text-slate-400 font-medium">Done</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        completedOrders.length === 0 ? (
+                            <div className="bg-white rounded-2xl border border-slate-100 py-16 text-center" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+                                <div className="text-3xl mb-3">✅</div>
+                                <p className="text-slate-700 font-semibold mb-1">No completed orders yet</p>
+                                <p className="text-slate-400 text-sm">Completed pickups will show up here.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {completedOrders.map((order, idx) => (
+                                    <OrderRow key={order.orderID || idx} order={order} idx={idx} />
+                                ))}
+                            </div>
+                        )
                     )}
                 </div>
             </main>
