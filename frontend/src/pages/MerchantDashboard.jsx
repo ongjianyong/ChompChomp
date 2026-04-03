@@ -192,7 +192,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
         setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box' });
     };
 
-    const inputClass = "w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all";
+    const inputClass = "w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition-all";
     const labelClass = "text-xs font-semibold text-slate-400 block mb-1.5";
 
     return (
@@ -311,7 +311,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                             {items.map((item, idx) => (
                                 <div key={item.itemID || idx} className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:-translate-y-0.5 transition-all duration-200 animate-fade-up" style={{ animationDelay: `${idx * 0.06}s`, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
-                                    <div className="h-1.5 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+                                    <div className="h-1.5 bg-gradient-to-r from-orange-400 to-amber-500"></div>
                                     <div className="p-5">
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
@@ -319,8 +319,8 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                                 <h3 className="text-base font-semibold text-slate-900">{item.name}</h3>
                                             </div>
                                             {item.quantity > 0 ? (
-                                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-green-50 text-green-700 shrink-0">
-                                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-orange-50 text-orange-700 shrink-0">
+                                                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
                                                     Live
                                                 </span>
                                             ) : (
@@ -392,13 +392,13 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-                                            order.status === 'completed' ? 'bg-slate-100 text-slate-500' :
-                                            order.status === 'ready_for_pickup' ? 'bg-blue-100 text-blue-700' :
-                                            'bg-amber-100 text-amber-700'
-                                        }`}>
-                                            {order.status.replace(/_/g, ' ')}
-                                        </span>
+                                        {/* Status shown only if the order is completed */}
+                                        {order.status === 'completed' && (
+                                            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-500">
+                                                Completed
+                                            </span>
+                                        )}
+                                        {/* Action buttons are sufficient indicator of state */}
                                         {order.status === 'paid' && (
                                             <Button onClick={() => handleUpdateOrderStatus(order.orderID, 'ready_for_pickup')} variant="secondary" className="rounded-xl py-2 px-4 text-xs font-semibold">
                                                 Mark Ready
