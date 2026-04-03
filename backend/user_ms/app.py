@@ -51,10 +51,10 @@ with app.app_context():
     # Add seed data if empty
     if not User.query.filter_by(email='alice@user.com').first():
         alice_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        alice = User(name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium")
+        alice = User(name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065")
         
         merchant_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        merchant = User(name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant")
+        merchant = User(name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839")
         
         db.session.add(alice)
         db.session.add(merchant)
