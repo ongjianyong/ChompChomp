@@ -8,6 +8,7 @@ const MerchantDashboard = ({
   onLogout,
   onGoHome,
   onGoProfile,
+  onGoAnalytics,
 }) => {
   const [isListing, setIsListing] = useState(false);
   const [items, setItems] = useState([]);
@@ -343,6 +344,7 @@ const MerchantDashboard = ({
         onLogout={onLogout}
         onGoHome={onGoHome}
         onGoProfile={onGoProfile}
+        onGoAnalytics={onGoAnalytics}
       />
 
       <main className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">

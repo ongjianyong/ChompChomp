@@ -5,7 +5,7 @@ import BoxDetailModal from '../components/BoxDetailModal';
 import CheckoutModal from '../components/CheckoutModal';
 import MyOrdersList from '../components/MyOrdersList';
 
-const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderStatus, onGoProfile }) => {
+const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderStatus, onGoProfile, onGoAnalytics }) => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedBox, setSelectedBox] = useState(null);
@@ -85,7 +85,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
 
     return (
         <div className="min-h-screen bg-slate-50">
-            <Navbar currentView={currentView} user={user} onOpenLogin={onOpenLogin} onLogout={onLogout} onGoHome={onGoHome} onGoProfile={onGoProfile} />
+            <Navbar currentView={currentView} user={user} onOpenLogin={onOpenLogin} onLogout={onLogout} onGoHome={onGoHome} onGoProfile={onGoProfile} onGoAnalytics={onGoAnalytics} />
 
             {/* Hero Section - Only for Guests */}
             {isGuest && (

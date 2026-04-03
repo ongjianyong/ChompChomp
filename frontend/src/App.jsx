@@ -4,6 +4,7 @@ import MerchantDashboard from './pages/MerchantDashboard'
 import LoginModal from './components/LoginModal'
 import OrderStatusPage from './pages/OrderStatusPage'
 import ProfilePage from './pages/ProfilePage'
+import AnalyticsPage from './pages/AnalyticsPage'
 
 function App() {
   const [currentView, setCurrentView] = useState('common');
@@ -13,12 +14,19 @@ function App() {
 
   // Check for existing token on load
   useEffect(() => {
+    const path = window.location.pathname;
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
-      setCurrentView(parsedUser.role);
+      if (path === '/analytics') {
+        setCurrentView('analytics');
+      } else if (path === '/profile') {
+        setCurrentView('profile');
+      } else {
+        setCurrentView(parsedUser.role);
+      }
     }
   }, []);
 
@@ -73,14 +81,17 @@ function App() {
     localStorage.removeItem('user');
     setUser(null);
     setCurrentView('common');
+    window.history.pushState({}, '', '/');
   };
 
   // Navigate home without logging out
   const handleGoHome = () => {
     if (currentView === 'merchant' || user?.role === 'merchant') {
       setCurrentView('merchant');
+      window.history.pushState({}, '', '/');
     } else {
       setCurrentView(user?.role || 'common');
+      window.history.pushState({}, '', '/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -88,6 +99,7 @@ function App() {
   const handleViewOrderStatus = (orderId) => {
     setActiveOrderId(orderId);
     setCurrentView('order_status');
+    window.history.pushState({}, '', `/orders/${orderId}`);
   };
 
   const sharedProps = {
@@ -97,7 +109,14 @@ function App() {
     onLogout: handleLogout,
     onGoHome: handleGoHome,
     onViewOrderStatus: handleViewOrderStatus,
-    onGoProfile: () => setCurrentView('profile'),
+    onGoProfile: () => {
+      setCurrentView('profile');
+      window.history.pushState({}, '', '/profile');
+    },
+    onGoAnalytics: () => {
+      setCurrentView('analytics');
+      window.history.pushState({}, '', '/analytics');
+    },
     onUserUpdate: (updatedUser) => {
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -119,6 +138,9 @@ function App() {
       )}
       {currentView === 'profile' && user && (
         <ProfilePage user={user} onUserUpdate={sharedProps.onUserUpdate} onGoHome={sharedProps.onGoHome} />
+      )}
+      {currentView === 'analytics' && user && (
+        <AnalyticsPage {...sharedProps} />
       )}
       {currentView === 'merchant' && (
         <MerchantDashboard {...sharedProps} />

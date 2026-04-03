@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import PremiumUpgradeModal from './PremiumUpgradeModal';
 
-const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfile }) => {
+const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfile, onGoAnalytics }) => {
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+    const navTabClass = (isActive) =>
+        `font-medium text-sm transition-colors ${isActive ? 'text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-900'}`;
 
     return (
         <>
@@ -24,7 +27,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
 
                     {/* Auth Controls */}
                     <div className="hidden md:flex space-x-4 items-center">
-                        {currentView === 'common' && (
+                        {!user && (
                             <button
                                 onClick={onOpenLogin}
                                 className="font-semibold text-sm text-white bg-orange-600 px-6 py-2.5 rounded-xl hover:bg-orange-700 transition-colors"
@@ -33,11 +36,25 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                             </button>
                         )}
 
-                        {currentView === 'user' && user && (
+                        {user?.role === 'user' && (
                             <div className="flex items-center space-x-4">
                                 <button
+                                    onClick={onGoHome}
+                                    className={navTabClass(currentView === 'user')}
+                                    title="Go Home"
+                                >
+                                    Home
+                                </button>
+                                <button
+                                    onClick={onGoAnalytics}
+                                    className={navTabClass(currentView === 'analytics')}
+                                    title="View Analytics"
+                                >
+                                    Analytics
+                                </button>
+                                <button
                                     onClick={onGoProfile}
-                                    className="flex items-center space-x-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                                    className={`${navTabClass(currentView === 'profile')} flex items-center space-x-2`}
                                     title="Edit Profile"
                                 >
                                     <span className="h-2 w-2 bg-orange-500 rounded-full"></span>
@@ -63,11 +80,25 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                             </div>
                         )}
 
-                        {currentView === 'merchant' && user && (
+                        {user?.role === 'merchant' && (
                             <div className="flex items-center space-x-4">
                                 <button
+                                    onClick={onGoHome}
+                                    className={navTabClass(currentView === 'merchant')}
+                                    title="Go Home"
+                                >
+                                    Home
+                                </button>
+                                <button
+                                    onClick={onGoAnalytics}
+                                    className={navTabClass(currentView === 'analytics')}
+                                    title="View Analytics"
+                                >
+                                    Analytics
+                                </button>
+                                <button
                                     onClick={onGoProfile}
-                                    className="font-medium text-sm text-slate-700 hover:text-slate-900 transition-colors"
+                                    className={navTabClass(currentView === 'profile')}
                                     title="Edit Profile"
                                 >
                                     {user.name}
@@ -80,7 +111,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                 </div>
             </div>
         </nav>
-            {currentView === 'user' && user && (
+            {user?.role === 'user' && (
                 <PremiumUpgradeModal
                     isOpen={isUpgradeModalOpen}
                     onClose={() => setIsUpgradeModalOpen(false)}
