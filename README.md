@@ -121,6 +121,40 @@ docker compose up --build -d
 
 This starts Kong, PostgreSQL, Redis, RabbitMQ, and all microservices.
 
+### Database Persistence (Local)
+
+PostgreSQL data is stored in the Docker named volume `postgres_data` (resolved by Docker Compose to a project-scoped name such as `chompchomp_postgres_data`).
+
+- View volume names:
+
+```bash
+docker volume ls
+```
+
+- Inspect exact local mountpoint:
+
+```bash
+docker volume inspect <your_postgres_volume_name>
+```
+
+On Docker Desktop for Windows, this volume is managed inside Docker's Linux VM/WSL storage.
+
+### Fresh Start Reliability
+
+This repository includes an idempotent Postgres bootstrap step (`postgres-bootstrap`) that runs on every startup and ensures:
+
+- `order_user` and `user_user` roles exist
+- `order_db` and `user_db` databases exist
+
+This prevents first-run failures for `user-ms` and `order-ms` on new machines.
+
+If someone has a stale or broken local volume, run a clean reset:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
 ### 4. Start the Frontend
 
 ```bash

@@ -40,6 +40,32 @@ services:
     networks:
       - chomp-network
 
+  postgres-bootstrap:
+    image: postgres:15
+    container_name: chomp-postgres-bootstrap
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=chomp-postgres
+      - POSTGRES_USER=chomp_admin
+      - POSTGRES_DB=postgres
+      - PGPASSWORD=chomp_password
+    volumes:
+      - ./postgres_init:/scripts:ro
+    command: >
+      bash -c "
+      set -e;
+      until pg_isready -h $$POSTGRES_HOST -U $$POSTGRES_USER -d $$POSTGRES_DB; do
+        echo 'Waiting for postgres...';
+        sleep 1;
+      done;
+      bash /scripts/init-dbs.sh
+      "
+    restart: "no"
+    networks:
+      - chomp-network
+
   redis:
     image: redis:6-alpine
     container_name: chomp-redis
@@ -64,10 +90,10 @@ services:
       - "5006:5006"
     environment:
       - DATABASE_URL=postgresql://user_user:user_pass@chomp-postgres:5432/user_db
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-chomp_jwt_secret_123}
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-bootstrap:
+        condition: service_completed_successfully
     volumes:
       - ./backend/user_ms:/app
     command: gunicorn --bind 0.0.0.0:5006 --reload --access-logfile - app:app
@@ -121,8 +147,8 @@ services:
     ports:
       - "5002:5002"
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-bootstrap:
+        condition: service_completed_successfully
       redis:
         condition: service_started
     environment:
@@ -144,7 +170,7 @@ services:
     ports:
       - "5003:5003"
     environment:
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder}
     volumes:
       - ./backend/payment_ms:/app
     command: gunicorn --bind 0.0.0.0:5003 --reload --access-logfile - app:app
@@ -160,10 +186,11 @@ services:
       - rabbitmq 
     environment:
       - RABBITMQ_HOST=rabbitmq
-      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
-      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
-      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
-      - INVENTORY_SERVICE_URL=https://personal-w8na3xfs.outsystemscloud.com/InventoryMS/rest/InventoryAPI/items  
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER:-+10000000000}
+      - TWILIO_TRIAL_DESTINATION_NUMBER=${TWILIO_TRIAL_DESTINATION_NUMBER:-+6598261606}
+      - INVENTORY_SERVICE_URL=${INVENTORY_SERVICE_URL:-https://personal-w8na3xfs.outsystemscloud.com/InventoryMS/rest/InventoryAPI/items}
     volumes:
       - ./backend/alert_ms:/app
     networks:
