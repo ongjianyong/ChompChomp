@@ -17,6 +17,19 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
     const [activeTab, setActiveTab] = useState('browse');
     const [maxDist, setMaxDist] = useState(null);
 
+    const getCategoryImage = (name) => {
+        const displayName = name || '';
+        const match = displayName.match(/^\[([A-Z]+)\]/);
+        const category = match ? match[1].toLowerCase() : 'others';
+        
+        const validCategories = ['bakery', 'meals', 'drinks', 'desserts', 'healthy', 'proteins', 'others'];
+        return validCategories.includes(category) ? `/category-${category}.png` : '/category-others.png';
+    };
+
+    const formatName = (name) => {
+        return (name || '').replace(/^\[[A-Z]+\]\s*/, '');
+    };
+
     useEffect(() => {
         if (activeTab === 'browse') {
             const fetchItems = async () => {
@@ -34,6 +47,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 original_price
                                 price
                                 distance
+                                description
                             }
                         }
                     `;
@@ -208,6 +222,16 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                         {/* Card top color band */}
                                         <div className="h-1.5 bg-gradient-to-r from-orange-400 to-amber-500"></div>
 
+                                        {/* Category Image */}
+                                        <div className="h-48 overflow-hidden relative">
+                                            <img 
+                                                src={getCategoryImage(product.name)} 
+                                                alt={product.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                        </div>
+
                                         <div className="p-6 flex flex-col flex-grow">
                                             {/* Row 1: Merchant + Distance */}
                                             <div className="flex items-center justify-between mb-3">
@@ -219,9 +243,9 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                                     </span>
                                                 )}
                                             </div>
-
+                                            
                                             {/* Row 2: Item name */}
-                                            <h3 className="text-xl font-display font-semibold text-slate-900 leading-snug mb-4">{product.name}</h3>
+                                            <h3 className="text-xl font-display font-semibold text-slate-900 leading-snug mb-4">{formatName(product.name)}</h3>
 
                                             {/* Row 3: Availability pill */}
                                             <div className="mb-5">

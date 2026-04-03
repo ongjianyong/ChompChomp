@@ -27,7 +27,18 @@ const MerchantDashboard = ({
     original_price: "",
     price: "",
     description: "Premium surplus box",
+    category: "bakery",
   });
+
+    const CATEGORIES = [
+        { id: 'bakery', name: 'Bakery', icon: '🥖' },
+        { id: 'meals', name: 'Meals', icon: '🍱' },
+        { id: 'drinks', name: 'Drinks', icon: '🥤' },
+        { id: 'desserts', name: 'Desserts', icon: '🍩' },
+        { id: 'healthy', name: 'Healthy', icon: '🥗' },
+        { id: 'proteins', name: 'Proteins', icon: '🥩' },
+        { id: 'others', name: 'Others', icon: '📦' }
+    ];
 
   useEffect(() => {
     const fetchMerchantItems = async () => {
@@ -124,6 +135,13 @@ const MerchantDashboard = ({
         : "http://localhost:8000/api/v1/discovery/listings";
       const method = editingItemId ? "PUT" : "POST";
 
+            // Extract category and clean up name
+            const categoryTag = `[${formData.category.toUpperCase()}]`;
+            let cleanName = formData.name;
+            // Remove existing tag if present during edit
+            cleanName = cleanName.replace(/^\[[A-Z]+\]\s*/, '');
+            const finalName = `${categoryTag} ${cleanName}`;
+
       const response = await fetch(url, {
         method: method,
         headers: {
@@ -135,6 +153,7 @@ const MerchantDashboard = ({
           merchant_name: user.name,
           postal_code: user.postal_code,
           ...formData,
+                    name: finalName,
           quantity: parseInt(formData.quantity),
           price,
           original_price: originalPrice,
@@ -164,12 +183,20 @@ const MerchantDashboard = ({
 
   const handleEditListing = (item) => {
     setEditingItemId(item.itemID);
+        
+        // Parse category from name
+        const displayName = item.name || '';
+        const match = displayName.match(/^\[([A-Z]+)\]/);
+        const category = match ? match[1].toLowerCase() : 'others';
+        const cleanName = displayName.replace(/^\[[A-Z]+\]\s*/, '');
+
     setFormData({
-      name: item.name,
+      name: cleanName,
       quantity: item.quantity,
       original_price: item.original_price,
       price: item.price,
       description: item.description || "",
+      category: category,
     });
     setFormError("");
     setIsListing(true);
@@ -240,6 +267,7 @@ const MerchantDashboard = ({
       original_price: "",
       price: "",
       description: "Premium surplus box",
+      category: "bakery",
     });
   };
 
@@ -363,6 +391,21 @@ const MerchantDashboard = ({
                     }
                   />
                 </div>
+                                <div>
+                                    <label className={labelClass}>Box Category</label>
+                                    <select
+                                        required
+                                        className={inputClass}
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    >
+                                        {CATEGORIES.map(cat => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.icon} {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                 <div>
                   <label className={labelClass}>Quantity Available</label>
                   <input

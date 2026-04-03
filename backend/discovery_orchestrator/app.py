@@ -415,6 +415,7 @@ class ItemType(graphene.ObjectType):
     original_price = graphene.Float(name="original_price")
     price = graphene.Float()
     distance = graphene.Float()
+    description = graphene.String()
 
 class Query(graphene.ObjectType):
     listings = graphene.List(

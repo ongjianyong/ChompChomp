@@ -12,6 +12,18 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
     const [isReserved, setIsReserved] = useState(false);
     const [orderData, setOrderData] = useState(null);
 
+    const getCategoryImage = (name) => {
+        const displayName = name || '';
+        const match = displayName.match(/^\[([A-Z]+)\]/);
+        const category = match ? match[1].toLowerCase() : 'others';
+        const validCategories = ['bakery', 'meals', 'drinks', 'desserts', 'healthy', 'proteins', 'others'];
+        return validCategories.includes(category) ? `/category-${category}.png` : '/category-others.png';
+    };
+
+    const formatName = (name) => {
+        return (name || '').replace(/^\[[A-Z]+\]\s*/, '');
+    };
+
     // Initial timer sync
     React.useEffect(() => {
         if (!isReserved) {
@@ -166,12 +178,24 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                     )}
 
                     {/* Order Summary */}
-                    <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-                        <div className="flex justify-between text-sm text-slate-600">
-                            <span>{box.name} × {quantity}</span>
-                            <span>${(box.price * quantity).toFixed(2)}</span>
+                    <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shrink-0">
+                                <img 
+                                    src={getCategoryImage(box.name)} 
+                                    alt={box.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <div className="flex-grow min-w-0">
+                                <p className="text-sm font-semibold text-slate-900 truncate">{formatName(box.name)}</p>
+                                <p className="text-xs text-slate-400">{quantity} unit{quantity > 1 ? 's' : ''} · Store Pickup</p>
+                            </div>
+                            <div className="text-sm font-bold text-slate-900 text-right">
+                                ${(box.price * quantity).toFixed(2)}
+                            </div>
                         </div>
-                        <div className="flex justify-between font-bold pt-2 border-t border-slate-200 text-slate-900">
+                        <div className="flex justify-between font-bold pt-3 border-t border-slate-200 text-slate-900">
                             <span>Total</span>
                             <span>${total.toFixed(2)}</span>
                         </div>
