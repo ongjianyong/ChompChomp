@@ -9,6 +9,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     const [editingItemId, setEditingItemId] = useState(null);
     const [itemToRemove, setItemToRemove] = useState(null);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
+    const [formError, setFormError] = useState('');
 
     const [orders, setOrders] = useState([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
@@ -59,11 +60,22 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     }, [user]);
 
     const handleInputChange = (e) => {
+        setFormError('');
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmitListing = async (e) => {
         e.preventDefault();
+        setFormError('');
+
+        const price = parseFloat(formData.price);
+        const originalPrice = parseFloat(formData.original_price);
+
+        if (Number.isFinite(price) && Number.isFinite(originalPrice) && price === originalPrice) {
+            setFormError('Discounted price must be different from the original price.');
+            return;
+        }
+
         try {
             const url = editingItemId
                 ? `http://localhost:8000/api/v1/inventory/${editingItemId}`
@@ -82,18 +94,23 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                     postal_code: user.postal_code,
                     ...formData,
                     quantity: parseInt(formData.quantity),
-                    price: parseFloat(formData.price),
-                    original_price: parseFloat(formData.original_price)
+                    price,
+                    original_price: originalPrice
                 })
             });
 
             if (response.ok) {
                 setIsListing(false);
+                setFormError('');
                 setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box' });
                 window.location.reload();
+            } else {
+                const data = await response.json().catch(() => ({}));
+                setFormError(data.error || data.message || 'Failed to save listing.');
             }
         } catch (error) {
             console.error("Failed to save listing:", error);
+            setFormError('Failed to save listing.');
         }
     };
 
@@ -106,6 +123,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
             price: item.price,
             description: item.description || ''
         });
+        setFormError('');
         setIsListing(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -153,6 +171,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     const handleCancelForm = () => {
         setIsListing(false);
         setEditingItemId(null);
+        setFormError('');
         setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box' });
     };
 
@@ -235,6 +254,11 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                     />
                                 </div>
                             </div>
+                            {formError && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {formError}
+                                </div>
+                            )}
                             <div className="flex justify-end pt-2">
                                 <Button variant="primary" type="submit" className="rounded-xl px-8 py-3 text-sm font-semibold">
                                     {editingItemId ? 'Update Listing' : 'List Box Now'}

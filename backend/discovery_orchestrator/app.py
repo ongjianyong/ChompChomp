@@ -39,6 +39,24 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c
 
 
+def _to_cents(value):
+    try:
+        return int(round(float(value) * 100))
+    except (TypeError, ValueError):
+        return None
+
+
+def _validate_listing_prices(data):
+    original_price_cents = _to_cents(data.get('original_price'))
+    discounted_price_cents = _to_cents(data.get('price'))
+
+    if original_price_cents is not None and discounted_price_cents is not None:
+        if original_price_cents == discounted_price_cents:
+            return jsonify({"error": "Discounted price must be different from the original price."}), 400
+
+    return None
+
+
 def get_coordinates(postal_code):
     """Fetch lat/long from OneMap SG API."""
     if not postal_code or len(postal_code) != 6:
@@ -273,6 +291,9 @@ def proxy_inventory_management(item_id):
     try:
         url = f"{INVENTORY_SERVICE_URL}/{item_id}"
         if request.method == 'PUT':
+            validation_error = _validate_listing_prices(request.json or {})
+            if validation_error:
+                return validation_error
             resp = requests.put(url, json=request.json, timeout=5)
         else:
             resp = requests.delete(url, timeout=5)
@@ -301,6 +322,10 @@ def create_listing():
     postal_code = data.get('postal_code')
 
     try:
+        validation_error = _validate_listing_prices(data or {})
+        if validation_error:
+            return validation_error
+
         # 1. Geocoding — get merchant lat/long from postal code
         lat, long = None, None
         if postal_code:
