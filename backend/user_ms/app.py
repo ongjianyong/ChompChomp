@@ -46,18 +46,35 @@ class User(db.Model):
             "long": self.long
         }
 
+
+def get_coordinates(postal_code):
+    """Fetch lat/long from OneMap SG API."""
+    if not postal_code or len(postal_code) != 6:
+        return None, None
+    try:
+        url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={postal_code}&returnGeom=Y&getAddrDetails=Y"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('found', 0) > 0:
+                result = data['results'][0]
+                return float(result['LATITUDE']), float(result['LONGITUDE'])
+    except Exception as e:
+        print(f"OneMap API error: {e}")
+    return None, None
+
 # Initialize Database
 with app.app_context():
     db.create_all()
     # Add seed data if empty
     if not User.query.filter_by(email='alice@user.com').first():
         alice_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        # Use a fixed high-entropy BigInt for seed Alice
-        alice = User(id=1000000001, name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065")
+        # Use a fixed high-entropy BigInt for seed Alice (Lat/Long for SMU 188065)
+        alice = User(id=1000000001, name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065", lat=1.2974, long=103.8502)
         
         merchant_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        # Use a fixed high-entropy BigInt for seed Merchant
-        merchant = User(id=2000000002, name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839")
+        # Use a fixed high-entropy BigInt for seed Merchant (Lat/Long for Paragon 238839)
+        merchant = User(id=2000000002, name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839", lat=1.3039, long=103.8358)
         
         db.session.add(alice)
         db.session.add(merchant)
@@ -104,6 +121,12 @@ def register():
     # Generate a random 63-bit BigInt for global uniqueness
     random_id = random.getrandbits(63)
 
+    # Automatic Geocoding
+    postal_code = data.get('postal_code')
+    lat, long = None, None
+    if postal_code:
+        lat, long = get_coordinates(postal_code)
+
     new_user = User(
         id=random_id,
         name=name,
@@ -112,7 +135,9 @@ def register():
         phone=phone,
         role=role,
         tier='regular',
-        postal_code=data.get('postal_code')
+        postal_code=postal_code,
+        lat=lat,
+        long=long
     )
 
     db.session.add(new_user)

@@ -168,7 +168,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 </span>
                             )}
 
-                            {!isGuest && user?.lat && (
+                            {!isGuest && (user?.lat || user?.postal_code) && (
                                 <div className="flex-grow flex justify-end items-center gap-2">
                                     <span className="text-xs font-semibold text-slate-400">Within</span>
                                     <select
@@ -247,16 +247,19 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                             {/* Row 2: Item name */}
                                             <h3 className="text-xl font-display font-semibold text-slate-900 leading-snug mb-4">{formatName(product.name)}</h3>
 
-                                            {/* Row 3: Availability pill */}
+                                            {/* Row 3: Availability */}
                                             <div className="mb-5">
                                                 {product.quantity > 0 ? (
-                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600">
-                                                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
-                                                        {product.quantity} available
+                                                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${
+                                                        product.quantity <= 3 
+                                                            ? 'bg-orange-600 text-white shadow-sm' 
+                                                            : 'bg-slate-50 text-slate-500 border border-slate-100'
+                                                    }`}>
+                                                        {product.quantity} AVAILABLE
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-600">
-                                                        Sold out
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-slate-50 text-slate-300 border border-slate-100">
+                                                        SOLD OUT
                                                     </span>
                                                 )}
                                             </div>
@@ -264,7 +267,6 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                             {/* Row 4: Price + Buy */}
                                             <div className="mt-auto pt-4 border-t border-slate-50 flex items-end justify-between">
                                                 <div>
-                                                    <p className="text-xs text-slate-400 font-medium mb-0.5">Price drop</p>
                                                     <div className="flex items-baseline gap-2">
                                                         <span className="text-2xl font-bold text-slate-900">${product.price?.toFixed(2) || '0.00'}</span>
                                                         <span className="text-sm text-slate-400 line-through">${product.original_price?.toFixed(2) || '0.00'}</span>
