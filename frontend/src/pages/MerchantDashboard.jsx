@@ -39,19 +39,36 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
 
         const fetchMerchantOrders = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/v1/orders/merchant/${user.id}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setOrders(data);
+                // Fetch full inventory list (the only GET that exists)
+                let nameMap = {};
+                    try {
+                        const invResp = await fetch(`http://localhost:8000/api/v1/inventory`);
+                        if (invResp.ok) {
+                            const allItems = await invResp.json();
+                            allItems.forEach(item => {
+                                const id = item.itemID || item.ItemID;
+                                const name = item.name || item.Name;
+                                if (id && name) nameMap[id] = name;
+                            });
+                        }
+                    } catch {}
+
+                    const response = await fetch(`http://localhost:8000/api/v1/orders/merchant/${user.id}`, {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setOrders(data.map(o => ({
+                            ...o,
+                            itemName: nameMap[o.itemID] ?? `Item #${o.itemID}`
+                        })));
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch merchant orders:", error);
+                } finally {
+                    setOrdersLoading(false);
                 }
-            } catch (error) {
-                console.error("Failed to fetch merchant orders:", error);
-            } finally {
-                setOrdersLoading(false);
-            }
-        };
+            };
 
         if (user && user.id) {
             fetchMerchantItems();
@@ -370,7 +387,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                             <span className="text-xs font-bold text-slate-500">#{order.orderID}</span>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-slate-900">Item #{order.itemID} · {order.quantity} unit{order.quantity > 1 ? 's' : ''}</p>
+                                            <p className="text-sm font-semibold text-slate-900">{order.itemName} · {order.quantity} unit{order.quantity > 1 ? 's' : ''}</p>
                                             <p className="text-xs text-slate-400">Customer #{order.customerID} · ${order.total_paid?.toFixed(2)}</p>
                                         </div>
                                     </div>
