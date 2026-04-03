@@ -328,6 +328,15 @@ const MerchantDashboard = ({
               Manage your surplus listings and incoming orders.
             </p>
           </div>
+          <Button
+            variant={isListing ? "secondary" : "primary"}
+            onClick={() =>
+              isListing ? handleCancelForm() : setIsListing(true)
+            }
+            className="rounded-xl px-6 py-2.5 text-sm font-semibold"
+          >
+            {isListing ? "Cancel" : "+ New Listing"}
+          </Button>
         </div>
 
         {/* New Listing Form */}
@@ -405,15 +414,6 @@ const MerchantDashboard = ({
                 </div>
               )}
               <div className="flex justify-end pt-2 gap-8">
-                <Button
-                  variant={isListing ? "secondary" : "primary"}
-                  onClick={() =>
-                    isListing ? handleCancelForm() : setIsListing(true)
-                  }
-                  className="rounded-xl px-6 py-2.5 text-sm font-semibold"
-                >
-                  {isListing ? "Cancel" : "+ New Listing"}
-                </Button>
                 <Button
                   variant="primary"
                   type="submit"
