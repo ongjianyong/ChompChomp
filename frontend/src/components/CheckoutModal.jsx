@@ -46,7 +46,6 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
             setError("Reservation expired! Please restart checkout.");
             setIsReserved(false);
             if (user && box) {
-                // The backend automatically releases stock when the timer expires
                 localStorage.removeItem(`res_${user.email}_${box.itemID}`);
             }
         }
@@ -66,9 +65,9 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
                 },
                 body: JSON.stringify({
                     itemID: box.itemID,
-                    userID: user.id, // BUG FIX: Use numeric ID
+                    userID: user.id,
                     merchantID: box.merchantID,
-                    merchant_name: box.merchant_name, // Pass name for history display
+                    merchant_name: box.merchant_name,
                     itemName: box.name,
                     quantity: quantity
                 })
@@ -80,10 +79,8 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
             }
 
             const data = await orderResponse.json();
-            console.log("RESERVATION SUCCESS:", data);
             const expiresAt = Date.now() + (data.expires_in || 60) * 1000;
 
-            // Save to persistence
             localStorage.setItem(`res_${user.email}_${box.itemID}`, JSON.stringify({ data, expiresAt }));
 
             setOrderData(data);
@@ -102,23 +99,21 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
         setError(null);
 
         try {
-            // Simplified Orchestration call
             const confirmResponse = await fetch(`http://localhost:8000/api/v1/checkout/pay`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     sessionID: orderData.sessionID,
                     amount: total,
-                    token: "tok_visa" // Simulated token for demo
+                    token: "tok_visa"
                 })
             });
 
             if (confirmResponse.ok) {
                 const finalData = await confirmResponse.json();
-                // SUCCESS: Clear persistence
                 localStorage.removeItem(`res_${user.email}_${box.itemID}`);
                 onPaymentSuccess(finalData.orderID);
             } else {
@@ -134,50 +129,49 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-md border border-black animate-in fade-in zoom-in duration-300 shadow-2xl">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <div className="flex flex-col">
-                        <h2 className="text-xl font-display uppercase tracking-tight">Checkout</h2>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Step {isReserved ? '2/2: Payment' : '1/2: Reservation'}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-xl animate-in fade-in zoom-in duration-300">
+                {/* Header */}
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-xl font-display font-semibold text-slate-900">Checkout</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">Step {isReserved ? '2/2 — Payment' : '1/2 — Reservation'}</p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-black">
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <div className="p-8 space-y-6">
+                <div className="p-6 space-y-5">
                     {/* Reservation Status */}
                     {isReserved ? (
-                        <div className="bg-green-50 border border-green-200 p-4 flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-green-600">Stock Secured for</span>
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                <span className="text-xs font-semibold text-green-700">Stock secured for</span>
                             </div>
-                            <span className="text-xl font-display text-green-600 leading-none">
+                            <span className="text-xl font-bold text-green-700 font-display">
                                 {Math.floor(reservationTimer / 60)}:{String(reservationTimer % 60).padStart(2, '0')}
                             </span>
                         </div>
                     ) : (
                         isProcessing && (
-                            <div className="bg-blue-50 border border-blue-200 p-4 flex items-center space-x-3">
-                                <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600">
-                                    Securing your reservation...
-                                </span>
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                <span className="text-xs font-semibold text-blue-700">Securing your reservation...</span>
                             </div>
                         )
                     )}
 
                     {/* Order Summary */}
-                    <div className="bg-gray-50 p-4 border border-gray-100 space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">{box.name} x {quantity}</span>
+                    <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                        <div className="flex justify-between text-sm text-slate-600">
+                            <span>{box.name} × {quantity}</span>
                             <span>${(box.price * quantity).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-bold pt-2 border-t border-gray-200">
+                        <div className="flex justify-between font-bold pt-2 border-t border-slate-200 text-slate-900">
                             <span>Total</span>
                             <span>${total.toFixed(2)}</span>
                         </div>
@@ -185,94 +179,91 @@ const CheckoutModal = ({ isOpen, onClose, box, user, deliveryType, total, quanti
 
                     {/* Form Section */}
                     {isReserved ? (
-                        <form onSubmit={handlePayment} className="space-y-6">
-                            <div className="space-y-4">
-                                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Card Information</label>
-                                <div className="space-y-3">
+                        <form onSubmit={handlePayment} className="space-y-4">
+                            <div className="space-y-3">
+                                <p className="text-xs font-semibold text-slate-400">Card Information</p>
+                                <input
+                                    type="text"
+                                    placeholder="Cardholder name"
+                                    required
+                                    className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                    value={cardName}
+                                    onChange={(e) => setCardName(e.target.value)}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Card number"
+                                    required
+                                    className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                    value={cardNumber}
+                                    onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                                />
+                                <div className="grid grid-cols-2 gap-3">
                                     <input
                                         type="text"
-                                        placeholder="CARDHOLDER NAME"
+                                        placeholder="MM/YY"
                                         required
-                                        className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
-                                        value={cardName}
-                                        onChange={(e) => setCardName(e.target.value)}
+                                        className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                        value={cardExpiry}
+                                        onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
                                     />
                                     <input
                                         type="text"
-                                        placeholder="CARD NUMBER"
+                                        placeholder="CVC"
                                         required
-                                        className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
-                                        value={cardNumber}
-                                        onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                                        className="w-full border border-slate-200 rounded-xl p-3.5 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                        value={cardCVC}
+                                        onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, '').slice(0, 3))}
                                     />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <input
-                                            type="text"
-                                            placeholder="MM/YY"
-                                            required
-                                            className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
-                                            value={cardExpiry}
-                                            onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="CVC"
-                                            required
-                                            className="w-full border border-gray-200 p-4 text-sm focus:border-black outline-none transition-colors rounded-none placeholder:text-gray-300"
-                                            value={cardCVC}
-                                            onChange={(e) => setCardCVC(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                                        />
-                                    </div>
                                 </div>
                             </div>
 
-                            {error && <div className="p-3 bg-red-50 text-red-600 text-xs border border-red-100">{error}</div>}
+                            {error && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">{error}</div>}
 
                             <Button
                                 type="submit"
                                 variant="primary"
                                 disabled={isProcessing}
-                                className="w-full bg-black text-white hover:bg-gray-800 py-4 uppercase tracking-widest font-bold rounded-none flex items-center justify-center space-x-2"
+                                className="w-full py-4 text-sm font-semibold rounded-xl"
                             >
                                 {isProcessing ? (
                                     <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>Processing...</span>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                                        Processing...
                                     </>
                                 ) : (
-                                    <span>Complete Purchase (${total.toFixed(2)})</span>
+                                    `Complete Purchase ($${total.toFixed(2)})`
                                 )}
                             </Button>
                         </form>
                     ) : (
-                        <div className="space-y-6">
-                            <div className="p-6 border border-dashed border-gray-200 text-center grayscale opacity-40 select-none">
-                                <p className="text-[10px] uppercase tracking-[0.2em] font-bold">Payment Form Locked</p>
-                                <p className="text-[10px] mt-1 italic">Confirming stock availability first...</p>
+                        <div className="space-y-4">
+                            <div className="p-5 border border-dashed border-slate-200 rounded-xl text-center opacity-50 select-none">
+                                <p className="text-xs font-semibold text-slate-500">Payment Form Locked</p>
+                                <p className="text-xs text-slate-400 mt-1">Confirming stock availability first...</p>
                             </div>
 
-                            {error && <div className="p-3 bg-red-50 text-red-600 text-xs border border-red-100">{error}</div>}
+                            {error && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100">{error}</div>}
 
                             <Button
                                 onClick={handleInitialReservation}
                                 disabled={isProcessing}
-                                className="w-full bg-black text-white hover:bg-gray-800 py-4 uppercase tracking-widest font-bold rounded-none flex items-center justify-center space-x-2"
+                                variant="primary"
+                                className="w-full py-4 text-sm font-semibold rounded-xl"
                             >
                                 {isProcessing ? (
                                     <>
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>Reserving...</span>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                                        Reserving...
                                     </>
                                 ) : (
-                                    <span>Initiate Checkout</span>
+                                    'Initiate Checkout'
                                 )}
                             </Button>
                         </div>
                     )}
 
-                    <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest">
-                        Secured by Stripe Simulation
-                    </p>
+                    <p className="text-xs text-slate-400 text-center">Secured by Stripe Simulation</p>
                 </div>
             </div>
         </div>
