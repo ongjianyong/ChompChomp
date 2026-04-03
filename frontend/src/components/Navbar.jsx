@@ -6,68 +6,71 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
 
     return (
         <>
-        <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 transition-all duration-300">
+        <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
 
-                    {/* Logo — navigate home without logging out */}
-                    <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={onGoHome}>
-                        <span className="font-display font-medium text-2xl tracking-tight text-black">ChompChomp</span>
+                    {/* Logo */}
+                    <div className="flex-shrink-0 flex items-center cursor-pointer gap-2" onClick={onGoHome}>
+                        <div className="w-8 h-8 bg-green-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white font-display font-bold text-sm">C</span>
+                        </div>
+                        <span className="font-display font-semibold text-xl tracking-tight text-slate-900">
+                            Chomp<span className="text-green-600">Chomp</span>
+                        </span>
                     </div>
 
                     {/* Auth Controls */}
-                    <div className="hidden md:flex space-x-6 items-center">
+                    <div className="hidden md:flex space-x-4 items-center">
                         {currentView === 'common' && (
                             <button
                                 onClick={onOpenLogin}
-                                className="font-bold text-xs text-white bg-black px-6 py-2.5 hover:bg-gray-800 transition-colors uppercase tracking-[0.2em]"
+                                className="font-semibold text-sm text-white bg-green-600 px-6 py-2.5 rounded-xl hover:bg-green-700 transition-colors"
                             >
-                                LOGIN
+                                Login
                             </button>
                         )}
 
                         {currentView === 'user' && user && (
-                            <div className="flex items-center space-x-6">
-                                <span className="font-medium text-sm text-black flex items-center space-x-2">
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={onGoProfile}
+                                    className="flex items-center space-x-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+                                    title="Edit Profile"
+                                >
                                     <span className="h-2 w-2 bg-green-500 rounded-full"></span>
-                                    <button
-                                        onClick={onGoProfile}
-                                        className="hover:underline cursor-pointer"
-                                        title="EDIT PROFILE"
-                                    >
-                                        {user.name.toUpperCase()}
-                                    </button>
-                                </span>
+                                    <span>{user.name}</span>
+                                </button>
                                 {user.tier === 'premium' ? (
-                                    <span 
-                                        className="font-bold text-[10px] px-3 py-1.5 uppercase tracking-widest border border-amber-400 text-amber-600 bg-amber-50 cursor-default"
-                                        title="YOU ARE A PREMIUM MEMBER"
+                                    <span
+                                        className="font-semibold text-xs px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 cursor-default"
+                                        title="You are a Premium Member"
                                     >
-                                        PREMIUM
+                                        Premium
                                     </span>
                                 ) : (
                                     <button
                                         onClick={() => setIsUpgradeModalOpen(true)}
-                                        className="font-bold text-[10px] px-3 py-1.5 uppercase tracking-widest border border-gray-300 text-gray-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-400 transition-colors focus:outline-none"
-                                        title="UPGRADE TO PREMIUM"
+                                        className="font-semibold text-xs px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                        title="Upgrade to Premium"
                                     >
-                                        GET PREMIUM
+                                        Get Premium
                                     </button>
                                 )}
-                                <button onClick={onLogout} className="font-bold text-[10px] text-gray-400 hover:text-black transition-colors uppercase tracking-widest">LOGOUT</button>
+                                <button onClick={onLogout} className="font-semibold text-sm text-slate-400 hover:text-slate-700 transition-colors">Logout</button>
                             </div>
                         )}
 
                         {currentView === 'merchant' && user && (
-                            <div className="flex items-center space-x-6">
+                            <div className="flex items-center space-x-4">
                                 <button
                                     onClick={onGoProfile}
-                                    className="font-medium text-sm text-black border-b-2 border-transparent hover:border-black cursor-pointer pb-1 uppercase tracking-widest transition-colors"
-                                    title="EDIT PROFILE"
+                                    className="font-medium text-sm text-slate-700 hover:text-slate-900 transition-colors"
+                                    title="Edit Profile"
                                 >
-                                    {user.name.toUpperCase()}
+                                    {user.name}
                                 </button>
-                                <button onClick={onLogout} className="font-bold text-[10px] text-white bg-black hover:bg-gray-800 transition-colors px-6 py-2.5 uppercase tracking-[0.2em]">LOGOUT</button>
+                                <button onClick={onLogout} className="font-semibold text-sm text-white bg-green-600 hover:bg-green-700 transition-colors px-5 py-2.5 rounded-xl">Logout</button>
                             </div>
                         )}
                     </div>
@@ -76,10 +79,10 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
             </div>
         </nav>
             {currentView === 'user' && user && (
-                <PremiumUpgradeModal 
-                    isOpen={isUpgradeModalOpen} 
-                    onClose={() => setIsUpgradeModalOpen(false)} 
-                    user={user} 
+                <PremiumUpgradeModal
+                    isOpen={isUpgradeModalOpen}
+                    onClose={() => setIsUpgradeModalOpen(false)}
+                    user={user}
                     onUpgradeSuccess={() => {
                         const currentUserStr = localStorage.getItem('user');
                         if (currentUserStr) {
@@ -88,7 +91,7 @@ const Navbar = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onGoProfil
                             localStorage.setItem('user', JSON.stringify(currentUser));
                             window.location.reload();
                         }
-                    }} 
+                    }}
                 />
             )}
         </>

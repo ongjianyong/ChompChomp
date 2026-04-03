@@ -12,81 +12,75 @@ const BoxDetailModal = ({ isOpen, onClose, box, onConfirm }) => {
     const totalPrice = itemTotal;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-lg border border-black overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-100">
-                    <h2 className="text-2xl font-display uppercase tracking-tight">Item Details</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-black transition-colors">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex justify-between items-center p-6 border-b border-slate-100">
+                    <h2 className="text-xl font-display font-semibold text-slate-900">Item Details</h2>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-8 space-y-10">
+                <div className="p-6 space-y-6">
                     <div>
-                        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">MERCHANT SOURCE: {box.merchant_name || `ID ${box.merchantID}`}</div>
-                        <h3 className="text-4xl font-display uppercase tracking-tighter mb-6">{box.name}</h3>
-                        
-                        <div className="grid grid-cols-2 gap-8 py-6 border-y border-gray-100">
-                            <div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">SAVINGS</span>
-                                <div className="flex items-baseline space-x-3">
-                                    <span className="text-3xl font-bold text-black">${box.price?.toFixed(2)}</span>
-                                    <span className="text-sm text-gray-400 line-through">${box.original_price?.toFixed(2)}</span>
+                        <p className="text-xs font-semibold text-slate-400 mb-1">{box.merchant_name || `Merchant #${box.merchantID}`}</p>
+                        <h3 className="text-3xl font-display font-semibold text-slate-900 mb-4">{box.name}</h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 rounded-xl p-4">
+                                <span className="text-xs font-semibold text-slate-400 block mb-1">Savings</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-slate-900">${box.price?.toFixed(2)}</span>
+                                    <span className="text-sm text-slate-400 line-through">${box.original_price?.toFixed(2)}</span>
                                 </div>
                             </div>
-                            <div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">AVAILABILITY</span>
-                                <span className={`text-xs font-bold uppercase tracking-widest ${box.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {box.quantity} UNITS REMAINING
+                            <div className="bg-slate-50 rounded-xl p-4">
+                                <span className="text-xs font-semibold text-slate-400 block mb-1">Availability</span>
+                                <span className={`text-sm font-bold ${box.quantity > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {box.quantity} units left
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400">SELECT QUANTITY</label>
-                        <div className="flex items-center border border-black w-full max-w-[240px]">
+                    <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-3">Quantity</label>
+                        <div className="flex items-center bg-slate-50 rounded-xl w-fit border border-slate-200">
                             <button
                                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                className="px-8 py-4 hover:bg-gray-100 transition-colors border-r border-black font-bold"
+                                className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 rounded-l-xl transition-colors font-bold text-slate-600"
                             >
-                                -
+                                −
                             </button>
-                            <span className="flex-1 text-center font-bold text-xl">{quantity}</span>
+                            <span className="w-12 text-center font-bold text-slate-900">{quantity}</span>
                             <button
                                 onClick={() => setQuantity(Math.min(maxQty, quantity + 1))}
-                                className="px-8 py-4 hover:bg-gray-100 transition-colors border-l border-black font-bold"
+                                className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 rounded-r-xl transition-colors font-bold text-slate-600"
                             >
                                 +
                             </button>
                         </div>
                     </div>
 
-                    <div className="pt-4">
-                        <div className="flex justify-between items-end mb-8">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">TRANSACTION TOTAL</span>
-                                <span className="text-xs text-black uppercase tracking-tight font-medium">
-                                    {quantity} UNIT{quantity > 1 ? 'S' : ''} x STORE PICKUP
-                                </span>
-                            </div>
-                            <span className="text-4xl font-bold tracking-tighter">${totalPrice.toFixed(2)}</span>
+                    <div className="bg-green-50 rounded-xl p-4 flex justify-between items-center">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500">{quantity} unit{quantity > 1 ? 's' : ''} · Store pickup</p>
+                            <p className="text-xs text-slate-400 mt-0.5">Stock held for 60 seconds upon selection</p>
                         </div>
-                        <Button
-                            variant="primary"
-                            className="w-full bg-black text-white hover:bg-gray-800 py-5 uppercase tracking-widest font-bold rounded-none text-xs"
-                            onClick={() => onConfirm(box, deliveryType, totalPrice, quantity)}
-                        >
-                            CONFIRM RESERVATION
-                        </Button>
-                        <p className="text-[10px] text-gray-400 text-center uppercase tracking-widest mt-6 font-medium">
-                            NOTICE: STOCK IS HELD FOR 60 SECONDS UPON SELECTION
-                        </p>
+                        <span className="text-3xl font-bold text-slate-900">${totalPrice.toFixed(2)}</span>
                     </div>
+
+                    <Button
+                        variant="primary"
+                        className="w-full py-4 text-sm font-semibold rounded-xl"
+                        onClick={() => onConfirm(box, deliveryType, totalPrice, quantity)}
+                    >
+                        Confirm Reservation
+                    </Button>
                 </div>
             </div>
         </div>
