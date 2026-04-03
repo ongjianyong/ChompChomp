@@ -32,14 +32,43 @@ def create_order():
     data = request.json
     db = SessionLocal()
     try:
+        quantity = data.get('quantity', 1)
+        try:
+            quantity = int(quantity)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Order quantity must be an integer."}), 400
+
+        if quantity <= 0:
+            return jsonify({"error": "Order quantity must be greater than 0."}), 400
+        if quantity >= 1000:
+            return jsonify({"error": "Order quantity must be less than 1000."}), 400
+
+        price = data.get('price')
+        try:
+            price = float(price)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Item price must be a number."}), 400
+
+        if price <= 0:
+            return jsonify({"error": "Item price must be greater than 0."}), 400
+
+        total_paid = data.get('total_paid')
+        try:
+            total_paid = float(total_paid)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Total paid must be a number."}), 400
+
+        if total_paid <= 0:
+            return jsonify({"error": "Total paid must be greater than 0."}), 400
+
         new_order = Order(
             customerID=data.get('customerID'),
             merchantID=data.get('merchantID'),
-            merchant_name=data.get('merchant_name'), # Capture name at time of order
+            merchant_name=data.get('merchant_name'), # Added for better history display
             itemID=data.get('itemID'),
-            quantity=data.get('quantity', 1),
-            item_price=data.get('price'),
-            total_paid=data.get('total_paid'),
+            quantity=quantity,
+            item_price=price,
+            total_paid=total_paid,
             paymentID=data.get('paymentID'),
             status=data.get('status', 'paid')
         )

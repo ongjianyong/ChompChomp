@@ -9,7 +9,7 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     const [editingItemId, setEditingItemId] = useState(null);
     const [itemToRemove, setItemToRemove] = useState(null);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
-    const [formError, setFormError] = useState('');
+    const [formErrors, setFormErrors] = useState([]);
 
     const [orders, setOrders] = useState([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
@@ -77,19 +77,41 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
     }, [user]);
 
     const handleInputChange = (e) => {
-        setFormError('');
+        setFormErrors([]);
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmitListing = async (e) => {
         e.preventDefault();
-        setFormError('');
+        setFormErrors([]);
 
+        const errors = [];
         const price = parseFloat(formData.price);
         const originalPrice = parseFloat(formData.original_price);
+        const quantity = Number(formData.quantity);
 
-        if (Number.isFinite(price) && Number.isFinite(originalPrice) && price === originalPrice) {
-            setFormError('Discounted price must be different from the original price.');
+        if (!Number.isInteger(quantity)) {
+            errors.push('Quantity must be an integer.');
+        }
+        if (quantity <= 0) {
+            errors.push('Quantity must be greater than 0.');
+        }
+        if (quantity >= 1000) {
+            errors.push('Quantity must be less than 1000.');
+        }
+        if (!Number.isFinite(price) || !Number.isFinite(originalPrice)) {
+            errors.push('Price fields must be valid numbers.');
+        } else {
+            if (originalPrice <= 0 || price <= 0) {
+                errors.push('Prices must be greater than 0.');
+            }
+            if (price >= originalPrice) {
+                errors.push('Discounted price must be lower than the original price.');
+            }
+        }
+
+        if (errors.length) {
+            setFormErrors(errors);
             return;
         }
 
@@ -118,12 +140,13 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
 
             if (response.ok) {
                 setIsListing(false);
-                setFormError('');
+                setFormErrors([]);
                 setFormData({ name: '', quantity: '', original_price: '', price: '', description: 'Premium surplus box' });
                 window.location.reload();
             } else {
                 const data = await response.json().catch(() => ({}));
-                setFormError(data.error || data.message || 'Failed to save listing.');
+                const message = data.error || data.message || 'Failed to save listing.';
+                setFormErrors([message]);
             }
         } catch (error) {
             console.error("Failed to save listing:", error);
@@ -271,9 +294,13 @@ const MerchantDashboard = ({ currentView, user, onLogout, onGoHome, onGoProfile 
                                     />
                                 </div>
                             </div>
-                            {formError && (
+                            {formErrors.length > 0 && (
                                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                    {formError}
+                                    <ul className="list-disc list-inside space-y-1">
+                                        {formErrors.map((err, idx) => (
+                                            <li key={idx}>{err}</li>
+                                        ))}
+                                    </ul>
                                 </div>
                             )}
                             <div className="flex justify-end pt-2">

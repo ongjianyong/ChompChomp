@@ -47,12 +47,29 @@ def _to_cents(value):
 
 
 def _validate_listing_prices(data):
+    # Validate quantity: required, integer, >0, <1000
+    quantity = data.get('quantity')
+    if quantity is None:
+        return jsonify({"error": "Quantity is required."}), 400
+    try:
+        quantity_int = int(quantity)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Quantity must be an integer."}), 400
+    if quantity_int <= 0:
+        return jsonify({"error": "Quantity must be greater than 0."}), 400
+    if quantity_int >= 1000:
+        return jsonify({"error": "Quantity must be less than 1000."}), 400
+
+    # Validate prices: required, positive, discounted lower than original
     original_price_cents = _to_cents(data.get('original_price'))
     discounted_price_cents = _to_cents(data.get('price'))
 
-    if original_price_cents is not None and discounted_price_cents is not None:
-        if original_price_cents == discounted_price_cents:
-            return jsonify({"error": "Discounted price must be different from the original price."}), 400
+    if original_price_cents is None or discounted_price_cents is None:
+        return jsonify({"error": "Original price and discounted price must be valid numbers."}), 400
+    if original_price_cents <= 0 or discounted_price_cents <= 0:
+        return jsonify({"error": "Prices must be greater than 0."}), 400
+    if discounted_price_cents >= original_price_cents:
+        return jsonify({"error": "Discounted price must be lower than the original price."}), 400
 
     return None
 
