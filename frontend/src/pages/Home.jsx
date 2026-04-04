@@ -5,6 +5,69 @@ import BoxDetailModal from '../components/BoxDetailModal';
 import CheckoutModal from '../components/CheckoutModal';
 import MyOrdersList from '../components/MyOrdersList';
 
+const HOW_IT_WORKS = [
+    {
+        step: '01',
+        title: 'Browse listings',
+        desc: 'See surplus food from restaurants near you — updated daily before closing time.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+            </svg>
+        ),
+    },
+    {
+        step: '02',
+        title: 'Reserve & pay',
+        desc: 'Lock in your rescue box with a single tap. Secure payment, instant confirmation.',
+        icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        ),
+    },
+    {
+        step: '03',
+        title: 'Pick up & enjoy',
+        desc: "Head to the merchant, show your code, and collect your rescue. That's it.",
+        icon: (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+        ),
+    },
+];
+const TIERS = [
+    { label: 'Listing access', free: 'Delayed (after 7PM)', premium: 'Early access (from 5PM)' },
+    { label: 'SMS alerts for new drops', free: false, premium: true },
+    { label: 'Distance filtering', free: true, premium: true },
+    { label: 'Order history', free: true, premium: true },
+    { label: 'Priority support', free: false, premium: true },
+];
+
+const FAQS = [
+    {
+        q: "What's inside a rescue box?",
+        a: "Each box contains surplus food from the merchant — typically a mix of their day's unsold items. The exact contents vary but the value is always higher than what you pay.",
+    },
+    {
+        q: "Can I choose what's in my box?",
+        a: "Not exactly — part of the fun is the surprise! You'll know the merchant and the type of cuisine, but the specific items are determined by what's left at the end of the day.",
+    },
+    {
+        q: "How does pickup work?",
+        a: "After paying, you'll receive a unique code. Head to the merchant during their collection window and show the code to collect your box.",
+    },
+    {
+        q: "What is Premium membership?",
+        a: "Premium members get early access to listings before they're opened to free users — meaning more choice and less chance of missing out.",
+    },
+    {
+        q: "What if I can't collect my order?",
+        a: "Please try to collect on time as the food is prepared for you. If you can't make it, contact the merchant directly as a courtesy.",
+    },
+];
+
 const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderStatus, onGoProfile }) => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,6 +79,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
     const [checkoutQuantity, setCheckoutQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('browse');
     const [maxDist, setMaxDist] = useState(null);
+    const [openFaq, setOpenFaq] = useState(null);
 
     const getCategoryImage = (name) => {
         const displayName = name || '';
@@ -121,6 +185,102 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 Shop Now
                             </Button>
                         </div>
+                    </div>
+                </section>
+            )}
+
+            {/* How It Works - Guests only */}
+            {isGuest && (
+                <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                    <div className="text-center mb-14">
+                        <h2 className="text-3xl md:text-4xl font-display font-semibold text-slate-900 mb-3">How it works</h2>
+                        <p className="text-slate-400 text-sm max-w-md mx-auto">Three steps to rescue great food at a fraction of the price.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {HOW_IT_WORKS.map((item) => (
+                            <div key={item.step} className="relative bg-white rounded-2xl p-8 border border-slate-100" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+                                <span className="absolute top-6 right-6 text-xs font-bold text-slate-200">{item.step}</span>
+                                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 mb-5">
+                                    {item.icon}
+                                </div>
+                                <h3 className="text-lg font-display font-semibold text-slate-900 mb-2">{item.title}</h3>
+                                <p className="text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Tier Comparison - Guests only */}
+            {isGuest && (
+                <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+                    <div className="text-center mb-14">
+                        <h2 className="text-3xl md:text-4xl font-display font-semibold text-slate-900 mb-3">Free vs Premium</h2>
+                        <p className="text-slate-400 text-sm">Upgrade for early access and never miss a drop again.</p>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden" style={{ boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
+                        <div className="grid grid-cols-3 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wide">
+                            <div className="p-4">Feature</div>
+                            <div className="p-4 text-center">Free</div>
+                            <div className="p-4 text-center text-orange-500">Premium</div>
+                        </div>
+                        {TIERS.map((row, i) => (
+                            <div key={i} className={`grid grid-cols-3 text-sm ${i < TIERS.length - 1 ? 'border-b border-slate-50' : ''}`}>
+                                <div className="p-4 text-slate-600 font-medium">{row.label}</div>
+                                <div className="p-4 text-center">
+                                    {typeof row.free === 'boolean' ? (
+                                        row.free ? <span className="text-orange-500">✓</span> : <span className="text-slate-300">✗</span>
+                                    ) : (
+                                        <span className="text-slate-400 text-xs">{row.free}</span>
+                                    )}
+                                </div>
+                                <div className="p-4 text-center">
+                                    {typeof row.premium === 'boolean' ? (
+                                        row.premium ? <span className="text-orange-500 font-bold">✓</span> : <span className="text-slate-300">✗</span>
+                                    ) : (
+                                        <span className="text-orange-600 text-xs font-semibold">{row.premium}</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        <div className="p-6 bg-orange-50 border-t border-orange-100 text-center">
+                            <Button onClick={onOpenLogin} variant="primary" className="px-8 py-3 text-sm rounded-xl font-semibold">
+                                Get started free
+                            </Button>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* FAQ - Guests only */}
+            {isGuest && (
+                <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+                    <div className="text-center mb-14">
+                        <h2 className="text-3xl md:text-4xl font-display font-semibold text-slate-900 mb-3">Frequently asked</h2>
+                        <p className="text-slate-400 text-sm">Everything you need to know before your first rescue.</p>
+                    </div>
+                    <div className="space-y-3">
+                        {FAQS.map((faq, i) => (
+                            <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+                                <button
+                                    className="w-full flex items-center justify-between p-6 text-left"
+                                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                                >
+                                    <span className="font-semibold text-slate-900 text-sm pr-4">{faq.q}</span>
+                                    <svg
+                                        className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`}
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {openFaq === i && (
+                                    <div className="px-6 pb-6 text-sm text-slate-500 leading-relaxed border-t border-slate-50 pt-4">
+                                        {faq.a}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </section>
             )}
@@ -354,6 +514,45 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     onViewOrderStatus(orderId);
                 }}
             />
+            {/* Footer */}
+            <footer className="border-t border-slate-100 bg-white mt-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-6 h-6 bg-orange-500 rounded-lg flex items-center justify-center">
+                                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+                                    </svg>
+                                </div>
+                                <span className="font-display font-semibold text-slate-900">Chomp<span className="text-orange-500">Chomp</span></span>
+                            </div>
+                            <p className="text-xs text-slate-400 max-w-xs">Rescuing surplus food from great restaurants across Singapore. Less waste, more taste.</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-8 text-sm text-slate-400">
+                            <div className="space-y-2">
+                                <p className="font-semibold text-slate-600 text-xs uppercase tracking-wide">Product</p>
+                                <ul className="space-y-1.5">
+                                    <li><button onClick={onOpenLogin} className="hover:text-slate-700 transition-colors">Browse listings</button></li>
+                                    <li><button onClick={onOpenLogin} className="hover:text-slate-700 transition-colors">Sign up free</button></li>
+                                    <li><button onClick={onOpenLogin} className="hover:text-slate-700 transition-colors">Premium</button></li>
+                                </ul>
+                            </div>
+                            <div className="space-y-2">
+                                <p className="font-semibold text-slate-600 text-xs uppercase tracking-wide">For merchants</p>
+                                <ul className="space-y-1.5">
+                                    <li><button onClick={onOpenLogin} className="hover:text-slate-700 transition-colors">Partner with us</button></li>
+                                    <li><button onClick={onOpenLogin} className="hover:text-slate-700 transition-colors">Merchant dashboard</button></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <p className="text-xs text-slate-400">© 2026 ChompChomp. All rights reserved.</p>
+                        <p className="text-xs text-slate-400">Made with care to reduce food waste in Singapore 🌿</p>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 };
