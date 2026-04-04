@@ -112,11 +112,8 @@ def reserve():
             print(f"[CHECKOUT] Lock already held for item {item_id}. Fast-fail.", file=sys.stderr)
             return jsonify({"error": "Another reservation for this item is in progress. Please try again."}), 409
 
-        # OUTSYSTEMS FIX: When there is only ONE input parameter in the body and it's a basic type (Integer),
-        # OutSystems expects the RAW value in the body, NOT a JSON object.
         reserve_url = f"{INVENTORY_SERVICE_URL}/reserve?ItemId={item_id}"
 
-        # Send just the integer '1', not '{"Quantity": 1}'
         payload = int(quantity)
 
         print(f"[DEBUG] REQUEST (RAW INT): POST {reserve_url} BODY: {payload}", file=sys.stderr)
