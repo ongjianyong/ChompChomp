@@ -125,10 +125,10 @@ const ProfilePage = ({ user, onUserUpdate, onGoHome }) => {
                             <div className="flex justify-between items-center mb-6">
                                 <span className="text-xs font-semibold text-slate-400">Current Tier</span>
                                 <span className={`font-semibold text-xs px-3 py-1.5 rounded-full ${user.tier === 'premium'
-                                    ? 'bg-amber-100 text-amber-700'
+                                    ? 'bg-slate-900 text-white shadow-lg'
                                     : 'bg-slate-100 text-slate-500'
                                     }`}>
-                                    {user.tier}
+                                    {user.tier === 'premium' ? 'Premium' : 'Regular'}
                                 </span>
                             </div>
                         </div>
