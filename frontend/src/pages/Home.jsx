@@ -797,50 +797,52 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                 onPaymentSuccess={(orderId) => { setIsCheckoutModalOpen(false); onViewOrderStatus(orderId); }}
             />
 
-            {/* ── FOOTER ── */}
-            <footer style={{ borderTop: '1.5px solid #1a1a1a', background: '#fafaf8', marginTop: isGuest ? 0 : 40 }}>
-                <div style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 72px 40px', fontFamily: "'DM Sans', sans-serif" }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 40, marginBottom: 56 }}>
-                        <div style={{ maxWidth: 280 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                                <div style={{ width: 32, height: 32, background: '#f97316', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <svg style={{ width: 16, height: 16, color: '#fff' }} fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
-                                    </svg>
+           {/* ── FOOTER ── */}
+            {isGuest && (
+                <footer style={{ borderTop: '1.5px solid #1a1a1a', background: '#fafaf8' }}>
+                    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 72px 40px', fontFamily: "'DM Sans', sans-serif" }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 40, marginBottom: 56 }}>
+                            <div style={{ maxWidth: 280 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                    <div style={{ width: 32, height: 32, background: '#f97316', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <svg style={{ width: 16, height: 16, color: '#fff' }} fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
+                                        </svg>
+                                    </div>
+                                    <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: 18, color: '#1a1a1a', letterSpacing: '-0.5px' }}>
+                                        Chomp<span style={{ color: '#f97316' }}>Chomp</span>
+                                    </span>
                                 </div>
-                                <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 900, fontSize: 18, color: '#1a1a1a', letterSpacing: '-0.5px' }}>
-                                    Chomp<span style={{ color: '#f97316' }}>Chomp</span>
-                                </span>
+                                <p style={{ fontSize: 13, fontWeight: 300, color: '#888', lineHeight: 1.8 }}>
+                                    Rescuing surplus food from great restaurants across Singapore. Less waste, more taste.
+                                </p>
                             </div>
-                            <p style={{ fontSize: 13, fontWeight: 300, color: '#888', lineHeight: 1.8 }}>
-                                Rescuing surplus food from great restaurants across Singapore. Less waste, more taste.
-                            </p>
-                        </div>
-                        <div style={{ display: 'flex', gap: 64, flexWrap: 'wrap' }}>
-                            <div>
-                                <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa', marginBottom: 16 }}>Product</p>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    {['Browse listings', 'Sign up free', 'Premium'].map(l => (
-                                        <li key={l}><button onClick={onOpenLogin} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 300, color: '#555', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#f97316'} onMouseLeave={e => e.currentTarget.style.color = '#555'}>{l}</button></li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div>
-                                <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa', marginBottom: 16 }}>For merchants</p>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    {['Partner with us', 'Merchant dashboard'].map(l => (
-                                        <li key={l}><button onClick={onOpenLogin} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 300, color: '#555', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#f97316'} onMouseLeave={e => e.currentTarget.style.color = '#555'}>{l}</button></li>
-                                    ))}
-                                </ul>
+                            <div style={{ display: 'flex', gap: 64, flexWrap: 'wrap' }}>
+                                <div>
+                                    <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa', marginBottom: 16 }}>Product</p>
+                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        {['Browse listings', 'Sign up free', 'Premium'].map(l => (
+                                            <li key={l}><button onClick={onOpenLogin} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 300, color: '#555', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#f97316'} onMouseLeave={e => e.currentTarget.style.color = '#555'}>{l}</button></li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa', marginBottom: 16 }}>For merchants</p>
+                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        {['Partner with us', 'Merchant dashboard'].map(l => (
+                                            <li key={l}><button onClick={onOpenLogin} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 300, color: '#555', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#f97316'} onMouseLeave={e => e.currentTarget.style.color = '#555'}>{l}</button></li>
+                                        ))}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
+                        <div style={{ borderTop: '1px solid #ececec', paddingTop: 24, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                            <p style={{ fontSize: 12, color: '#bbb', fontWeight: 300 }}>© 2026 ChompChomp. All rights reserved.</p>
+                            <p style={{ fontSize: 12, color: '#bbb', fontWeight: 300 }}>Made with care to reduce food waste in Singapore 🌿</p>
+                        </div>
                     </div>
-                    <div style={{ borderTop: '1px solid #ececec', paddingTop: 24, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                        <p style={{ fontSize: 12, color: '#bbb', fontWeight: 300 }}>© 2026 ChompChomp. All rights reserved.</p>
-                        <p style={{ fontSize: 12, color: '#bbb', fontWeight: 300 }}>Made with care to reduce food waste in Singapore 🌿</p>
-                    </div>
-                </div>
-            </footer>
+                </footer>
+            )}
         </div>
     );
 };
