@@ -54,7 +54,7 @@ const HOW_IT_WORKS = [
 ];
 
 const TIERS = [
-    { label: 'Listing access',           free: 'Delayed (after 7PM)', premium: 'Early access (from 5PM)' },
+    { label: 'Listing access',           free: 'Delayed', premium: 'Early access' },
     { label: 'SMS alerts for new drops', free: false,                 premium: true },
     { label: 'Distance filtering',       free: true,                  premium: true },
     { label: 'Order history',            free: true,                  premium: true },
