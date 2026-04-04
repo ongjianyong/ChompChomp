@@ -397,7 +397,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                                 </p>
                                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                                     <button className="ch-btn-primary" onClick={onOpenLogin}>Shop Now</button>
-                                    <button className="ch-btn-ghost">How It Works</button>
+                                    <button className="ch-btn-ghost" onClick={() => document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' })}>How It Works</button>
                                 </div>
                             </div>
                             <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 'clamp(13px, 1.1vw, 15px)', fontWeight: 300, color: '#888', lineHeight: 1.85 }}>
@@ -432,7 +432,7 @@ const Home = ({ currentView, user, onOpenLogin, onLogout, onGoHome, onViewOrderS
                     </div>
 
                     {/* ── 3. HOW IT WORKS ── */}
-                    <section style={{ background: '#fafaf8', padding: '110px 72px' }}>
+                    <section id="how-it-works" style={{ background: '#fafaf8', padding: '110px 72px' }}>
                         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 64, flexWrap: 'wrap', gap: 24 }}>
                                 <div>
