@@ -68,7 +68,7 @@ const FAQS = [
     },
     {
         q: "Can I choose what's in my box?",
-        a: "Not exactly — part of the fun is the surprise! You'll know the merchant and the type of cuisine, but the specific items are determined by what's left at the end of the day.",
+        a: "Yes — what you see is what you get. Each listing shows exactly what the merchant is offering, so you know what you're purchasing before you buy.",
     },
     {
         q: "How does pickup work?",
