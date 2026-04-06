@@ -12,7 +12,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chomp_jwt_secret_123')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://user_user:user_pass@chomp-postgres:5432/user_db")
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 GEOCODING_SERVICE_URL = os.environ.get("GEOCODING_SERVICE_URL", "http://geocoding-ms:5007/api/v1/geocode")

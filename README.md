@@ -202,3 +202,16 @@ All backend API traffic is routed through Kong at `http://localhost:8000`.
 | SMS Alerts | Twilio | SMS delivery (wrapped by `alert-ms`, orchestrated by `notification-orchestrator`) |
 | Geocoding | OneMap SG | Postal code to coordinates (wrapped by `geocoding-ms`) |
 
+---
+
+## Testing SMS Notifications
+
+Because this project uses a **Twilio Trial Account**, there are specific rules for receiving real SMS messages:
+
+1.  **Verified Numbers Only**: Twilio will only send messages to the phone number you have verified in your Twilio Console.
+2.  **Mock Mode**: If a notification is triggered for any other number, the system will **automatically skip** the real SMS and print the message to the `alert-ms` Docker terminal logs instead.
+3.  **To Receive Real SMS**: 
+    - Set `TWILIO_TRIAL_DESTINATION_NUMBER` in your **`.env`** to your own personal verified phone number (e.g., `+6591234567`).
+    - Use that **exact same phone number** when registering or updating an account in the ChompChomp app.
+    - When an alert is triggered (e.g., a new listing for your tier), you will receive a real text message.
+

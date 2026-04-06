@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Stripe Configuration
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_placeholder")
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 @app.route('/api/v1/payments/charge', methods=['POST'])
 def process_payment():
