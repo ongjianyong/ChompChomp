@@ -42,15 +42,16 @@ Orchestrate multiple atomic/wrapper services to fulfil complex business workflow
 
 | Service | Port | Responsibility |
 |---|---|---|
-| `discovery_orchestrator` | 5010 | Tiered listing discovery, geocoding, RabbitMQ notification routing |
+| `discovery_orchestrator` | 5010 | Tiered listing discovery, GraphQL marketplace API, calls `geocoding-ms` |
 | `checkout_orchestrator` | 5011 | Redis locking, stock reservation, payment coordination |
+| `notification_orchestrator` | 5012 | RabbitMQ tiered notification routing, post-TTL stock verification |
 
 ### Atomic Services Layer
 Manage core data entities with exclusive access to their own data store.
 
 | Service | Port | Responsibility |
 |---|---|---|
-| `user_ms` | 5006 | User & merchant account management (PostgreSQL) |
+| `user_ms` | 5006 | User & merchant account management, uses `geocoding-ms` (PostgreSQL) |
 | `order_ms` | 5002 | Order history persistence (PostgreSQL) |
 | OutSystems Inventory MS | (External) | Food item listings & stock management (OutSystems Cloud DB) |
 
@@ -59,6 +60,7 @@ Thin wrappers around external third-party APIs, exposing them as internal micros
 
 | Service | Port | Wraps |
 |---|---|---|
+| `geocoding_ms` | 5007 | OneMap SG Search API (Postal code to Lat/Long) |
 | `payment_ms` | 5003 | Stripe PaymentIntent API |
 | `alert_ms` | 5004 | Twilio SMS API |
 
@@ -179,12 +181,14 @@ All backend API traffic is routed through Kong at `http://localhost:8000`.
 
 | Service | Internal URL | Kong Route |
 |---|---|---|
-| Discovery Orchestrator | `discovery-orchestrator:5010` | `/api/v1/discovery` |
+| Discovery Orchestrator | `discovery-orchestrator:5010` | `/api/v1/discovery`, `/graphql` |
 | Checkout Orchestrator | `checkout-orchestrator:5011` | `/api/v1/checkout` |
+| Notification Orchestrator | `notification-orchestrator:5012` | — (RabbitMQ Consumer) |
 | User MS | `user-ms:5006` | `/api/v1/users` |
 | Order MS | `order-ms:5002` | `/api/v1/orders` |
-| Payment MS | `payment-ms:5003` | — |
-| Alert MS | `alert-ms:5004` | — |
+| Geocoding MS | `geocoding-ms:5007` | — (Internal) |
+| Payment MS | `payment-ms:5003` | `/api/v1/payments` |
+| Alert MS | `alert-ms:5004` | `/api/v1/alert` |
 | RabbitMQ Dashboard | `localhost:15674` | — |
 
 ---
@@ -195,6 +199,6 @@ All backend API traffic is routed through Kong at `http://localhost:8000`.
 |---|---|---|
 | Inventory MS | OutSystems | Cloud-hosted food item inventory (atomic service) |
 | Payment | Stripe | Secure card processing via PaymentIntent API |
-| SMS Alerts | Twilio | SMS delivery to customers and merchants |
-| Geocoding | OneMap SG | Convert Singapore postal codes to lat/lng coordinates |
+| SMS Alerts | Twilio | SMS delivery (wrapped by `alert-ms`, orchestrated by `notification-orchestrator`) |
+| Geocoding | OneMap SG | Postal code to coordinates (wrapped by `geocoding-ms`) |
 
