@@ -22,7 +22,7 @@ db = SQLAlchemy(app)
 # Models
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.BigInteger, primary_key=True, autoincrement=False)
+    id = db.Column(db.String(100), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
@@ -70,11 +70,11 @@ with app.app_context():
     if not User.query.filter_by(email='alice@user.com').first():
         alice_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Use a fixed high-entropy BigInt for seed Alice (Lat/Long for SMU 188065)
-        alice = User(id=1000000001, name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065", lat=1.2974, long=103.8502)
+        alice = User(id="1", name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065", lat=1.2974, long=103.8502)
         
         merchant_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Use a fixed high-entropy BigInt for seed Merchant (Lat/Long for Paragon 238839)
-        merchant = User(id=2000000002, name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839", lat=1.3039, long=103.8358)
+        merchant = User(id="2", name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839", lat=1.3039, long=103.8358)
         
         db.session.add(alice)
         db.session.add(merchant)
@@ -118,8 +118,8 @@ def register():
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    # Generate a random 63-bit BigInt for global uniqueness
-    random_id = random.getrandbits(63)
+    # Original State: Simple sequential String ID
+    new_id = str(User.query.count() + 1)
 
     # Automatic Geocoding
     postal_code = data.get('postal_code')
@@ -128,7 +128,7 @@ def register():
         lat, long = get_coordinates(postal_code)
 
     new_user = User(
-        id=random_id,
+        id=new_id,
         name=name,
         email=email,
         password_hash=hashed_password,
