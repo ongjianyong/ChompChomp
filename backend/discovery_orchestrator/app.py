@@ -14,6 +14,7 @@ CORS(app)
 # Configuration
 INVENTORY_SERVICE_URL = os.environ.get("INVENTORY_SERVICE_URL", "http://inventory-ms:5001/api/v1/inventory")
 USER_SERVICE_URL = os.environ.get("USER_SERVICE_URL", "http://user-ms:5006/api/v1/users")
+GEOCODING_SERVICE_URL = os.environ.get("GEOCODING_SERVICE_URL", "http://geocoding-ms:5007/api/v1/geocode")
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 
 # ─────────────────────────────────────────
@@ -75,19 +76,20 @@ def _validate_listing_prices(data):
 
 
 def get_coordinates(postal_code):
-    """Fetch lat/long from OneMap SG API."""
-    if not postal_code or len(postal_code) != 6:
+    """Fetch lat/long from Geocoding MS (wrapper service over OneMap SG API)."""
+    if not postal_code:
         return None, None
     try:
-        url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={postal_code}&returnGeom=Y&getAddrDetails=Y"
-        response = requests.get(url, timeout=5)
+        response = requests.get(
+            GEOCODING_SERVICE_URL,
+            params={"postal_code": postal_code},
+            timeout=5
+        )
         if response.status_code == 200:
             data = response.json()
-            if data.get('found', 0) > 0:
-                result = data['results'][0]
-                return float(result['LATITUDE']), float(result['LONGITUDE'])
+            return data.get('lat'), data.get('long')
     except Exception as e:
-        print(f"OneMap API error: {e}")
+        print(f"[DISCOVERY] Geocoding MS error: {e}")
     return None, None
 
 
@@ -268,6 +270,7 @@ def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
 
     return result
 
+
 @app.route('/api/v1/discovery/listings', methods=['GET'])
 @app.route('/api/v1/inventory', methods=['GET'])
 def get_listings():
@@ -281,7 +284,7 @@ def get_listings():
     user_lat = request.args.get('lat', type=float)
     user_long = request.args.get('long', type=float)
     max_dist = request.args.get('max_dist', type=float)
-    user_tier = request.args.get('tier', 'free').lower()  # 'premium' or 'free'
+    user_tier = request.args.get('tier', 'free').lower()
 
     try:
         result = _fetch_listings_data(user_lat, user_long, max_dist, user_tier)
@@ -314,14 +317,12 @@ def proxy_inventory_management(item_id):
             resp = requests.put(url, json=request.json, timeout=5)
         else:
             resp = requests.delete(url, timeout=5)
-            
-        # Handle cases where OutSystems returns text/plain (like success messages)
+
         try:
             return jsonify(resp.json()), resp.status_code
         except Exception:
-            # If it's not JSON, return a standard message object wrapping the text response
             return jsonify({"message": resp.text}), resp.status_code
-            
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -331,7 +332,7 @@ def proxy_inventory_management(item_id):
 def create_listing():
     """
     Composite endpoint — Publish Listing MS.
-    Coordinates: OneMap geocoding → User MS location update → Inventory MS save → Tiered notifications.
+    Coordinates: Geocoding MS → User MS location update → Inventory MS save → Tiered notifications.
     Only merchants call this endpoint.
     """
     data = request.json
@@ -343,10 +344,8 @@ def create_listing():
         if validation_error:
             return validation_error
 
-        # 1. Geocoding — get merchant lat/long from postal code
-        lat, long = None, None
-        if postal_code:
-            lat, long = get_coordinates(postal_code)
+        # 1. Geocoding — call Geocoding MS (wrapper over OneMap SG API)
+        lat, long = get_coordinates(postal_code)
 
         # 2. Update merchant location in User MS
         if lat and long:
@@ -375,7 +374,6 @@ def create_listing():
             if users_resp.status_code == 200:
                 all_users = users_resp.json()
 
-                # Only notify customers (role == 'user'), not merchants
                 premium_users = [
                     u for u in all_users
                     if u.get('role') == 'user' and u.get('tier') == 'premium'
@@ -407,7 +405,7 @@ def create_listing():
 
 class ItemType(graphene.ObjectType):
     itemID = graphene.Int(name="itemID")
-    merchantID = graphene.String(name="merchantID") # Required for checkout persistence
+    merchantID = graphene.String(name="merchantID")
     name = graphene.String()
     merchant_name = graphene.String(name="merchant_name")
     status = graphene.String()
@@ -444,18 +442,18 @@ def graphql_endpoint():
     data = request.get_json()
     if not data:
         return jsonify({"errors": ["No JSON body provided"]}), 400
-        
+
     query = data.get('query')
     variables = data.get('variables')
-    
+
     result = schema.execute(query, variable_values=variables)
-    
+
     response_data = {}
     if result.errors:
         response_data['errors'] = [str(e) for e in result.errors]
     if result.data:
         response_data['data'] = result.data
-        
+
     return jsonify(response_data), 200 if not result.errors else 400
 
 

@@ -163,6 +163,15 @@ services:
     networks:
       - chomp-network
 
+  geocoding-ms:
+    build: ./backend/geocoding-ms
+    container_name: geocoding-ms
+    ports:
+      - "5007:5007"
+    environment:
+      - PORT=5007
+    networks:
+      - chomp-network
 
   payment-ms:
     build: ./backend/payment_ms
