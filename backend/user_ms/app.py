@@ -47,21 +47,7 @@ class User(db.Model):
         }
 
 
-def get_coordinates(postal_code):
-    """Fetch lat/long from OneMap SG API."""
-    if not postal_code or len(postal_code) != 6:
-        return None, None
-    try:
-        url = f"https://www.onemap.gov.sg/api/common/elastic/search?searchVal={postal_code}&returnGeom=Y&getAddrDetails=Y"
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('found', 0) > 0:
-                result = data['results'][0]
-                return float(result['LATITUDE']), float(result['LONGITUDE'])
-    except Exception as e:
-        print(f"OneMap API error: {e}")
-    return None, None
+
 
 # Initialize Database
 with app.app_context():
@@ -121,11 +107,9 @@ def register():
     # Original State: Simple sequential String ID
     new_id = str(User.query.count() + 1)
 
-    # Automatic Geocoding
-    postal_code = data.get('postal_code')
+    # Geocoding logic removed from User MS (Legacy). 
+    # Use Geocoding MS wrapper via frontend or orchestrator instead.
     lat, long = None, None
-    if postal_code:
-        lat, long = get_coordinates(postal_code)
 
     new_user = User(
         id=new_id,
