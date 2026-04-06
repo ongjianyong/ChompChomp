@@ -148,7 +148,7 @@ _consumer_thread = threading.Thread(target=consume_background, daemon=True)
 _consumer_thread.start()
 
 
-@app.route('/health', methods=['GET'])
+@app.route('/api/v1/health', methods=['GET'])
 def health():
     return jsonify({"status": "healthy", "service": "notification-orchestrator"}), 200
 

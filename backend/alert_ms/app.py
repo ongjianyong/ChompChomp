@@ -60,6 +60,11 @@ def trigger_alert():
     return jsonify({"error": "Failed to send alert"}), 500
 
 
+@app.route('/api/v1/health', methods=['GET'])
+def health():
+    return jsonify({"status": "healthy", "service": "alert-ms"}), 200
+
+
 if __name__ == '__main__':
     # Alert MS is now a pure REST service (no RabbitMQ listener)
     port = int(os.environ.get("PORT", 5004))
