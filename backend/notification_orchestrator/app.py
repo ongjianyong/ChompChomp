@@ -123,9 +123,9 @@ def consume_background():
             channel.queue_declare(queue='premium_notification_queue', durable=True)
             channel.queue_bind(exchange='chomp_events', queue='premium_notification_queue', routing_key='notification.premium')
 
-            # Dead Letter Queue (Regular Users)
+            # Dead Letter Queue (Free Users)
             channel.queue_declare(queue='free_notification_dlq', durable=True)
-            channel.queue_bind(exchange='chomp_events', queue='free_notification_dlq', routing_key='notification.regular.dlq')
+            channel.queue_bind(exchange='chomp_events', queue='free_notification_dlq', routing_key='notification.free.dlq')
 
             # Direct Alert Queue
             channel.queue_declare(queue='direct_alert_queue', durable=True)

@@ -6,6 +6,7 @@ import threading
 import time
 import json
 import pika
+import sys
 import redis
 
 app = Flask(__name__)
@@ -108,14 +109,14 @@ def reserve():
         # If a concurrent request already holds the lock, fail immediately (fast-fail)
         # without making an HTTPS round-trip to the OutSystems Cloud API.
         if not acquire_item_lock(item_id):
-            print(f"[CHECKOUT] Lock already held for item {item_id}. Fast-fail.")
+            print(f"[CHECKOUT] Lock already held for item {item_id}. Fast-fail.", file=sys.stderr)
             return jsonify({"error": "Another reservation for this item is in progress. Please try again."}), 409
 
         reserve_url = f"{INVENTORY_SERVICE_URL}/reserve?ItemId={item_id}"
 
         payload = int(quantity)
 
-        print(f"[DEBUG] REQUEST (RAW INT): POST {reserve_url} BODY: {payload}")
+        print(f"[DEBUG] REQUEST (RAW INT): POST {reserve_url} BODY: {payload}", file=sys.stderr)
 
         resp = requests.post(reserve_url, json=payload, timeout=5)
 
@@ -146,7 +147,7 @@ def reserve():
             }), 200
 
         # Handle non-JSON or error responses gracefully
-        print(f"[DEBUG] OutSystems returned {resp.status_code}: {resp.text}")
+        print(f"[DEBUG] OutSystems returned {resp.status_code}: {resp.text}", file=sys.stderr)
         try:
             error_data = resp.json()
         except:
@@ -188,8 +189,8 @@ def process_payment():
             try:
                 order_payload = {
                     "customerID": session['userID'],
-                    "merchantID": session.get('merchantID'),
-                    "merchant_name": session.get('merchant_name'),
+                    "merchantID": session.get('merchantID') or "MOCK_MERCHANT",
+                    "merchant_name": session.get('merchant_name') or "A Good Samaritan",
                     "itemID": session['itemID'],
                     "quantity": session['quantity'],
                     "price": data.get('amount'),

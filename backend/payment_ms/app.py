@@ -44,11 +44,37 @@ def process_payment():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/v1/payments/refund', methods=['POST'])
+def process_refund():
+    data = request.json
+    payment_intent_id = data.get('paymentID')
+    amount = data.get('amount') # Optional, for partial refunds
 
-@app.route('/api/v1/health', methods=['GET'])
-def health():
-    return jsonify({"status": "healthy", "service": "payment-ms"}), 200
+    try:
+        print(f"REFUND [DEBUG]: Processing refund for {payment_intent_id}, amount: {amount}")
+        if amount:
+            refund = stripe.Refund.create(
+                payment_intent=payment_intent_id,
+                amount=int(amount * 100)
+            )
+        else:
+            refund = stripe.Refund.create(
+                payment_intent=payment_intent_id
+            )
 
+        print(f"REFUND [SUCCESS]: {refund.id}, status: {refund.status}")
+        return jsonify({
+            "message": "Refund successful",
+            "refundID": refund.id,
+            "status": refund.status
+        }), 200
+
+    except stripe.error.StripeError as e:
+        print(f"REFUND [STRIPE ERROR]: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(f"REFUND [GENERAL ERROR]: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5003))

@@ -296,7 +296,7 @@ const MerchantDashboard = ({
             {order.quantity > 1 ? "s" : ""}
           </p>
           <p className="text-xs text-slate-400">
-            Customer #{order.customerID} · ${order.total_paid?.toFixed(2)}
+            Total Paid: ${order.total_paid?.toFixed(2)}
           </p>
         </div>
       </div>

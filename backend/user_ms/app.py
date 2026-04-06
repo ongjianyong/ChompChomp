@@ -6,6 +6,7 @@ import datetime
 import bcrypt
 import random
 from flask_cors import CORS
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +15,7 @@ CORS(app)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chomp_jwt_secret_123')
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://user_user:user_pass@chomp-postgres:5432/user_db")
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
+GEOCODING_SERVICE_URL = os.environ.get("GEOCODING_SERVICE_URL", "http://geocoding-ms:5007/api/v1/geocode")
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -22,11 +24,11 @@ db = SQLAlchemy(app)
 # Models
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.String(100), primary_key=True)
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=False)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
+    phone = db.Column(db.String(50), nullable=False)
     role = db.Column(db.String(20), nullable=False) # 'user' or 'merchant'
     tier = db.Column(db.String(20), default='regular') # 'regular' or 'premium'
     postal_code = db.Column(db.String(10), nullable=True)
@@ -47,7 +49,22 @@ class User(db.Model):
         }
 
 
-
+def get_coordinates(postal_code):
+    """Fetch lat/long from Geocoding MS (wrapper over OneMap SG API)."""
+    if not postal_code or len(postal_code) != 6:
+        return None, None
+    try:
+        response = requests.get(
+            GEOCODING_SERVICE_URL,
+            params={"postal_code": postal_code},
+            timeout=5
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('lat'), data.get('long')
+    except Exception as e:
+        print(f"[USER-MS] Geocoding MS error: {e}")
+    return None, None
 
 # Initialize Database
 with app.app_context():
@@ -56,11 +73,11 @@ with app.app_context():
     if not User.query.filter_by(email='alice@user.com').first():
         alice_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Use a fixed high-entropy BigInt for seed Alice (Lat/Long for SMU 188065)
-        alice = User(id="1", name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065", lat=1.2974, long=103.8502)
+        alice = User(id=1000000001, name="Alice (Premium)", email="alice@user.com", password_hash=alice_pwd, phone="+6591234567", role="user", tier="premium", postal_code="188065", lat=1.2974, long=103.8502)
         
         merchant_pwd = bcrypt.hashpw("password123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Use a fixed high-entropy BigInt for seed Merchant (Lat/Long for Paragon 238839)
-        merchant = User(id="2", name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839", lat=1.3039, long=103.8358)
+        merchant = User(id=2000000002, name="Balthazar Bakery", email="merchant@chomp.com", password_hash=merchant_pwd, phone="+6588888888", role="merchant", postal_code="238839", lat=1.3039, long=103.8358)
         
         db.session.add(alice)
         db.session.add(merchant)
@@ -104,38 +121,47 @@ def register():
 
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
-    # Original State: Simple sequential String ID
-    new_id = str(User.query.count() + 1)
+    # Generate a random 63-bit BigInt for global uniqueness
+    random_id = random.getrandbits(63)
 
-    # Geocoding logic removed from User MS (Legacy). 
-    # Use Geocoding MS wrapper via frontend or orchestrator instead.
+    # Automatic Geocoding
+    postal_code = data.get('postal_code')
     lat, long = None, None
+    if postal_code:
+        lat, long = get_coordinates(postal_code)
 
-    new_user = User(
-        id=new_id,
-        name=name,
-        email=email,
-        password_hash=hashed_password,
-        phone=phone,
-        role=role,
-        tier='regular',
-        postal_code=postal_code,
-        lat=lat,
-        long=long
-    )
+    try:
+        new_user = User(
+            id=random_id,
+            name=name,
+            email=email,
+            password_hash=hashed_password,
+            phone=phone,
+            role=role,
+            tier='regular',
+            postal_code=postal_code,
+            lat=lat,
+            long=long
+        )
 
-    db.session.add(new_user)
-    db.session.commit()
+        db.session.add(new_user)
+        db.session.commit()
 
-    token = jwt.encode({
-        'sub': str(new_user.id),
-        'iss': 'chomp-issuer',
-        'role': new_user.role,
-        'tier': new_user.tier,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    }, app.config['SECRET_KEY'], algorithm='HS256')
+        token = jwt.encode({
+            'sub': str(new_user.id),
+            'iss': 'chomp-issuer',
+            'role': new_user.role,
+            'tier': new_user.tier,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
 
-    return jsonify({'token': token, 'user': new_user.to_dict()}), 201
+        return jsonify({'token': token, 'user': new_user.to_dict()}), 201
+    except Exception as e:
+        print(f"[USER-MS] Registration error: {e}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        return jsonify({"error": "Failed to create user. Please check your details or try again later."}), 500
 
 @app.route('/api/v1/users/<user_id>', methods=['GET'])
 def get_user(user_id):

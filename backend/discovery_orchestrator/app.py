@@ -133,11 +133,11 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
             routing_key='notification.premium'
         )
 
-        # ── Regular Customer Queue (TTL) ───────────────────────────
-        # Messages sit here for REGULAR_QUEUE_TTL_MS then route to DLQ.
+        # ── Free Customer Queue (TTL) ──────────────────────────────
+        # Messages sit here for FREE_QUEUE_TTL_MS then route to DLQ.
         # Alert MS does NOT consume from this queue directly.
         channel.queue_declare(
-            queue='regular_notification_queue',
+            queue='free_notification_queue',
             durable=True,
             arguments={
                 'x-message-ttl': REGULAR_QUEUE_TTL_MS,
@@ -147,8 +147,8 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
         )
         channel.queue_bind(
             exchange='chomp_events',
-            queue='regular_notification_queue',
-            routing_key='notification.regular'
+            queue='free_notification_queue',
+            routing_key='notification.free'
         )
 
         # ── Dead Letter Queue ──────────────────────────────────────
@@ -160,7 +160,7 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
         channel.queue_bind(
             exchange='chomp_events',
             queue='free_notification_dlq',
-            routing_key='notification.regular.dlq'
+            routing_key='notification.free.dlq'
         )
 
         msg_body = f"Flash Sale! {item_name} listed for ${item_price}!"
@@ -182,25 +182,25 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
                 )
                 premium_count += 1
 
-        # Publish to Regular Customer Queue — delayed by TTL
-        regular_count = 0
-        for u in regular_users:
+        # Publish to Free Customer Queue — delayed by TTL
+        free_count = 0
+        for u in free_users:
             if u.get('phone'):
                 channel.basic_publish(
                     exchange='chomp_events',
-                    routing_key='notification.regular',
+                    routing_key='notification.free',
                     body=json.dumps({
                         'phone': u['phone'],
                         'item_id': item_id,
                         'message': msg_body,
-                        'tier': 'regular'
+                        'tier': 'free'
                     }),
                     properties=pika.BasicProperties(delivery_mode=2)
                 )
-                regular_count += 1
+                free_count += 1
 
         connection.close()
-        print(f"[DISCOVERY] Published {premium_count} premium (immediate) and {regular_count} regular (TTL {REGULAR_QUEUE_TTL_MS}ms) notifications for item {item_id}")
+        print(f"[DISCOVERY] Published {premium_count} premium (immediate) and {free_count} regular (TTL {REGULAR_QUEUE_TTL_MS}ms) notifications for item {item_id}")
 
     except Exception as e:
         print(f"[DISCOVERY] Failed to publish tiered notifications: {e}")
@@ -272,6 +272,7 @@ def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
 
 
 @app.route('/api/v1/discovery/listings', methods=['GET'])
+@app.route('/api/v1/inventory', methods=['GET'])
 def get_listings():
     """
     Composite endpoint — fetch listings with tier-based visibility.
@@ -327,6 +328,7 @@ def proxy_inventory_management(item_id):
 
 
 @app.route('/api/v1/discovery/listings', methods=['POST'])
+@app.route('/api/v1/inventory', methods=['POST'])
 def create_listing():
     """
     Composite endpoint — Publish Listing MS.
