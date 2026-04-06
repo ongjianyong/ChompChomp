@@ -165,7 +165,7 @@ services:
 
   geocoding-ms:
     build: ./backend/geocoding-ms
-    container_name: geocoding-ms
+    container_name: chomp-geocoding-ms
     ports:
       - "5007:5007"
     environment:
@@ -186,22 +186,38 @@ services:
     networks:
       - chomp-network
 
+  notification-orchestrator:
+    build: ./backend/notification_orchestrator
+    container_name: chomp-notification-orchestrator
+    ports:
+      - "5012:5012"
+    depends_on:
+      - rabbitmq
+      - alert-ms
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RABBITMQ_HOST=rabbitmq
+      - INVENTORY_SERVICE_URL=https://personal-w8na3xfs.outsystemscloud.com/InventoryMS/rest/InventoryAPI/items
+      - ALERT_SERVICE_URL=http://alert-ms:5004/api/v1/alert
+    volumes:
+      - ./backend/notification_orchestrator:/app
+    command: gunicorn --bind 0.0.0.0:5012 --reload --access-logfile - app:app
+    networks:
+      - chomp-network
+
   alert-ms:
     build: ./backend/alert_ms
     container_name: chomp-alert-ms
     ports:
       - "5004:5004"
-    depends_on:
-      - rabbitmq 
     environment:
-      - RABBITMQ_HOST=rabbitmq
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
       - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER:-+10000000000}
       - TWILIO_TRIAL_DESTINATION_NUMBER=${TWILIO_TRIAL_DESTINATION_NUMBER:-+6598261606}
-      - INVENTORY_SERVICE_URL=${INVENTORY_SERVICE_URL:-https://personal-w8na3xfs.outsystemscloud.com/InventoryMS/rest/InventoryAPI/items}
     volumes:
       - ./backend/alert_ms:/app
+    command: gunicorn --bind 0.0.0.0:5004 --reload --access-logfile - app:app
     networks:
       - chomp-network
 
