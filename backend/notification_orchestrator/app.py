@@ -23,12 +23,12 @@ def trigger_alert_wrapper(phone, message):
             timeout=5
         )
         if resp.status_code == 200:
-            print(f"[NOTIF-ORCH] ✅ Alert MS call successful for {phone}")
+            print(f"[NOTIF-ORCH] Alert MS call successful for {phone}")
             return True
         else:
-            print(f"[NOTIF-ORCH] ⚠️  Alert MS call failed (status {resp.status_code})")
+            print(f"[NOTIF-ORCH] Alert MS call failed (status {resp.status_code})")
     except Exception as e:
-        print(f"[NOTIF-ORCH] ❌ Error calling Alert MS: {e}")
+        print(f"[NOTIF-ORCH] Error calling Alert MS: {e}")
     return False
 
 
@@ -40,18 +40,18 @@ def process_premium(ch, method, properties, body):
         message = data.get('message')
         item_id = data.get('item_id')
 
-        print(f"[NOTIF-ORCH] 🔔 Premium event for item {item_id} → {phone}")
+        print(f"[NOTIF-ORCH] Premium event for item {item_id} -> {phone}")
         trigger_alert_wrapper(phone, message)
 
     except Exception as e:
-        print(f"[NOTIF-ORCH] ❌ Error processing premium message: {e}")
+        print(f"[NOTIF-ORCH] Error processing premium message: {e}")
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 def process_free_dlq(ch, method, properties, body):
     """
-    Free tier notifications (after TTL wait).
+    Regular tier notifications (after TTL wait).
     Orchestration Logic: Check stock availability before triggering alert.
     """
     try:
@@ -60,9 +60,9 @@ def process_free_dlq(ch, method, properties, body):
         message = data.get('message')
         item_id = data.get('item_id')
 
-        print(f"[NOTIF-ORCH] ⏰ Free event (post-TTL) for item {item_id} → {phone}")
+        print(f"[NOTIF-ORCH] Regular event (post-TTL) for item {item_id} -> {phone}")
 
-        # Business Logic: Final stock check before notifying free-tier user
+        # Business Logic: Final stock check before notifying regular-tier user
         try:
             qty_resp = requests.get(
                 f"{INVENTORY_SERVICE_URL}/{item_id}/quantity",
@@ -71,19 +71,19 @@ def process_free_dlq(ch, method, properties, body):
             if qty_resp.status_code == 200:
                 qty = qty_resp.json().get('quantity', 0)
                 if qty <= 0:
-                    print(f"[NOTIF-ORCH] 🚫 Item {item_id} sold out. Skipping notification for {phone}.")
+                    print(f"[NOTIF-ORCH] Item {item_id} sold out. Skipping notification for {phone}.")
                     ch.basic_ack(delivery_tag=method.delivery_tag)
                     return
-                print(f"[NOTIF-ORCH] ✅ Item {item_id} still has {qty} units. Proceeding.")
+                print(f"[NOTIF-ORCH] Item {item_id} still has {qty} units. Proceeding.")
             else:
-                print(f"[NOTIF-ORCH] ⚠️  Stock check unavailable (status {qty_resp.status_code}). Proceeding anyway.")
+                print(f"[NOTIF-ORCH] Stock check unavailable (status {qty_resp.status_code}). Proceeding anyway.")
         except Exception as e:
-            print(f"[NOTIF-ORCH] ⚠️  Stock check failed: {e}. Proceeding anyway.")
+            print(f"[NOTIF-ORCH] Stock check failed: {e}. Proceeding anyway.")
 
         trigger_alert_wrapper(phone, message)
 
     except Exception as e:
-        print(f"[NOTIF-ORCH] ❌ Error processing free DLQ message: {e}")
+        print(f"[NOTIF-ORCH] Error processing regular DLQ message: {e}")
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -95,11 +95,11 @@ def process_direct_alert(ch, method, properties, body):
         phone = data.get('phone')
         message = data.get('message')
         
-        print(f"[NOTIF-ORCH] ✉️  Direct system alert → {phone}")
+        print(f"[NOTIF-ORCH] Direct system alert -> {phone}")
         trigger_alert_wrapper(phone, message)
         
     except Exception as e:
-        print(f"[NOTIF-ORCH] ❌ Error processing direct alert: {e}")
+        print(f"[NOTIF-ORCH] Error processing direct alert: {e}")
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -135,11 +135,11 @@ def consume_background():
             channel.basic_consume(queue='free_notification_dlq', on_message_callback=process_free_dlq)
             channel.basic_consume(queue='direct_alert_queue', on_message_callback=process_direct_alert)
 
-            print('[NOTIF-ORCH] ✅ Connected to RabbitMQ. Consuming flows...')
+            print('[NOTIF-ORCH] Connected to RabbitMQ. Consuming flows...')
             channel.start_consuming()
 
         except Exception as e:
-            print(f"[NOTIF-ORCH] ❌ RabbitMQ connection failed: {e}. Retrying in 5s...")
+            print(f"[NOTIF-ORCH] RabbitMQ connection failed: {e}. Retrying in 5s...")
             time.sleep(5)
 
 

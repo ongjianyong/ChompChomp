@@ -19,10 +19,10 @@ RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 
 # ─────────────────────────────────────────
 # TTL config — change this value only
-# Demo: 60,000ms (1 min) | Production: 600,000ms (10 min)
+# Demo: 10,000ms (10s) | Production: 600,000ms (10 min)
 # ─────────────────────────────────────────
-FREE_QUEUE_TTL_MS = 60000        # 60 seconds for demo
-FREE_VISIBILITY_SECONDS = 60     # Must match TTL above (in seconds)
+REGULAR_QUEUE_TTL_MS = 10000        # 10 seconds for demo
+REGULAR_VISIBLE_DELAY = 10          # Must match TTL above (in seconds)
 
 
 # ─────────────────────────────────────────
@@ -100,14 +100,14 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
     Premium customers → published to premium_notification_queue
                         (no TTL, Alert MS consumes immediately)
 
-    Free customers    → published to free_notification_queue
-                        (TTL = FREE_QUEUE_TTL_MS)
+    Regular customers    → published to free_notification_queue
+                        (TTL = REGULAR_QUEUE_TTL_MS)
                         After TTL expires, RabbitMQ routes messages to
                         free_notification_dlq automatically.
                         Alert MS consumes from DLQ, checks availability,
                         then sends SMS via Twilio.
 
-    Note: Both Premium and Free refer to CUSTOMER tiers, not merchants.
+    Note: Both Premium and Regular refer to CUSTOMER tiers, not merchants.
     Merchants are not notified — they are the ones creating listings.
     """
     try:
@@ -140,7 +140,7 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
             queue='free_notification_queue',
             durable=True,
             arguments={
-                'x-message-ttl': FREE_QUEUE_TTL_MS,
+                'x-message-ttl': REGULAR_QUEUE_TTL_MS,
                 'x-dead-letter-exchange': 'chomp_events',
                 'x-dead-letter-routing-key': 'notification.free.dlq'
             }
@@ -200,10 +200,10 @@ def publish_tiered_notifications(item_id, item_name, item_price, premium_users, 
                 free_count += 1
 
         connection.close()
-        print(f"[DISCOVERY] ✅ Published {premium_count} premium (immediate) and {free_count} free (TTL {FREE_QUEUE_TTL_MS}ms) notifications for item {item_id}")
+        print(f"[DISCOVERY] Published {premium_count} premium (immediate) and {free_count} regular (TTL {REGULAR_QUEUE_TTL_MS}ms) notifications for item {item_id}")
 
     except Exception as e:
-        print(f"[DISCOVERY] ⚠️ Failed to publish tiered notifications: {e}")
+        print(f"[DISCOVERY] Failed to publish tiered notifications: {e}")
 
 
 # ─────────────────────────────────────────
@@ -239,7 +239,7 @@ def _fetch_listings_data(user_lat, user_long, max_dist, user_tier):
                     if created_dt.tzinfo is None:
                         created_dt = created_dt.replace(tzinfo=timezone.utc)
                     age_seconds = (now - created_dt).total_seconds()
-                    if age_seconds < FREE_VISIBILITY_SECONDS:
+                    if age_seconds < REGULAR_VISIBLE_DELAY:
                         continue
                 except Exception as e:
                     print(f"[DISCOVERY] Could not parse created_at: {e}")

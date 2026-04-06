@@ -19,7 +19,7 @@ ORDER_SERVICE_URL = os.environ.get("ORDER_SERVICE_URL", "http://order-ms:5002/ap
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
 REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
-SESSION_TTL = 120  # Redis key expiry in seconds (2x the 60s window as safety margin)
+SESSION_TTL = 40  # Redis key expiry in seconds (2x the 20s window as safety margin)
 
 # Redis client - distributed session store for production-grade fault tolerance
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
@@ -71,8 +71,8 @@ def publish_event(event_type, payload):
         print(f"Failed to publish event: {e}")
 
 def checkout_timeout_worker(session_id, item_id, quantity, item_name):
-    """Wait 1 minute and release stock if not confirmed."""
-    time.sleep(60)
+    """Wait 20 seconds and release stock if not confirmed."""
+    time.sleep(20)
     session = session_get(session_id)
     if session and session['status'] == 'pending':
         print(f"[CHECKOUT] Session {session_id} timed out. Releasing stock.")
@@ -143,7 +143,7 @@ def reserve():
             return jsonify({
                 "sessionID": session_id,
                 "message": "Stock reserved",
-                "expires_in": 60
+                "expires_in": 20
             }), 200
 
         # Handle non-JSON or error responses gracefully
