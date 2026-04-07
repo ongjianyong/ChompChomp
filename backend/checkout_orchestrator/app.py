@@ -42,7 +42,7 @@ def session_update_status(session_id, status):
         session['status'] = status
         session_set(session_id, session)
 
-LOCK_TTL = 25  # Distributed lock TTL in seconds — must exceed 20s checkout window
+LOCK_TTL = 10  # Distributed lock TTL in seconds (auto-expires if orchestrator crashes)
 
 def acquire_item_lock(item_id):
     """Attempt to acquire a distributed lock for an item using Redis SETNX.
@@ -93,8 +93,6 @@ def checkout_timeout_worker(session_id, item_id, quantity, item_name):
             session_update_status(session_id, 'timed_out')
         except Exception as e:
             print(f"Error during timeout cleanup: {e}")
-        finally:
-            release_item_lock(item_id)
 
 @app.route('/api/v1/checkout/reserve', methods=['POST'])
 def reserve():
@@ -122,6 +120,9 @@ def reserve():
 
         resp = requests.post(reserve_url, json=payload, timeout=5)
 
+        # Release lock immediately after OutSystems responds
+        release_item_lock(item_id)
+
         if resp.status_code == 200:
             session_id = f"sess_{int(time.time())}_{item_id}"
             session_data = {
@@ -136,8 +137,7 @@ def reserve():
             # Persist session to Redis with TTL
             session_set(session_id, session_data)
 
-            # Lock is held for the full 20s window.
-            # Released by: checkout_timeout_worker (timeout) or process_payment (success).
+            # Start Timeout Orchestration
             threading.Thread(target=checkout_timeout_worker, args=(session_id, item_id, quantity, item_name), daemon=True).start()
 
             return jsonify({
@@ -146,8 +146,7 @@ def reserve():
                 "expires_in": 20
             }), 200
 
-        # OutSystems rejected reserve — release lock and return error
-        release_item_lock(item_id)
+        # Handle non-JSON or error responses gracefully
         print(f"[DEBUG] OutSystems returned {resp.status_code}: {resp.text}", file=sys.stderr)
         try:
             error_data = resp.json()
@@ -156,7 +155,6 @@ def reserve():
         return jsonify(error_data), resp.status_code
 
     except Exception as e:
-        release_item_lock(item_id)
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/v1/checkout/pay', methods=['POST'])
@@ -185,8 +183,6 @@ def process_payment():
         if pay_resp.status_code == 200:
             # 2. Finalize Session in Redis
             session_update_status(session_id, 'paid')
-            # Release item lock — checkout completed successfully
-            release_item_lock(session['itemID'])
 
             # 3. Persist Order History (Atomic Persistence)
             persistent_order_id = 0
