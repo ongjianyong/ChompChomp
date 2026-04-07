@@ -86,7 +86,7 @@ def checkout_timeout_worker(session_id, item_id, quantity, item_name):
 
             # Broadcast Re-availability to Alert MS
             publish_event('alert.send', {
-                "phone": "+6598261606",  # Demo recipient
+                "phone": "+6588139500",  # Demo recipient
                 "message": f"ChompChomp: {item_name} is available again! Grab it now!"
             })
 
@@ -206,7 +206,7 @@ def process_payment():
 
             # 4. Notify User via Alert MS
             publish_event('alert.send', {
-                "phone": "+6598261606",
+                "phone": "+6588139500",
                 "message": f"ChompChomp: Payment successful for {session['itemName']}! Thank you for rescuing food."
             })
 

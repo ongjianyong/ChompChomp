@@ -8,7 +8,7 @@ app = Flask(__name__)
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER")
-TWILIO_TRIAL_NUMBER = os.environ.get("TWILIO_TRIAL_DESTINATION_NUMBER", "+6598261606")
+TWILIO_TRIAL_NUMBER = os.environ.get("TWILIO_TRIAL_DESTINATION_NUMBER", "+6588139500")
 
 
 def send_real_sms(phone, message):
